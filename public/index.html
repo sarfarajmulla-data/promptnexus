@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-density="comfortable">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PromptForge — Universal AI Prompt Architect</title>
+<meta name="description" content="Describe what you want to accomplish. PromptForge works out how to say it to AI, then hands you a prompt built for the model you are using.">
+<meta name="theme-color" content="#08090b">
+<meta name="color-scheme" content="dark light">
+<meta property="og:title" content="PromptForge — Universal AI Prompt Architect">
+<meta property="og:description" content="Turn any idea into the right AI prompt. Describe it plainly; get a structured, model-aware prompt with a quality score.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0b0e'/%3E%3Cpath d='M16 6.5 25.5 16 16 25.5 6.5 16Z' fill='none' stroke='%234f7fff' stroke-width='1.6'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%234f7fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<a class="skip" href="#workspace">Skip to workspace</a>
+<canvas id="field" aria-hidden="true"></canvas>
+
+<div class="shell">
+  <!-- ── top bar ─────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+          <path d="M16 6.5 25.5 16 16 25.5 6.5 16Z" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="16" cy="16" r="2.6" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="brand-name">PromptForge</span>
+      <span class="brand-tag" title="Beta">beta</span>
+    </div>
+
+    <div class="topbar-center" id="workspaceIndicator" hidden>
+      <span class="dot" aria-hidden="true"></span>
+      <span class="ellipsis" id="indicatorText">Untitled prompt</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="chip" id="engineChip" type="button" aria-haspopup="dialog" aria-expanded="false">
+        <span class="status-dot" id="engineDot" data-state="local"></span>
+        <span id="engineLabel">No-AI mode</span>
+      </button>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch theme" title="Theme">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+      <button class="icon-btn" id="paletteBtn" type="button" aria-label="Command palette" title="Command palette — Ctrl K">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h10M4 17h7"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── navigation rail ─────────────────────────────────────── -->
+  <nav class="rail" id="rail" aria-label="Primary">
+    <div class="rail-group" role="tablist" aria-orientation="vertical">
+      <button class="rail-item" role="tab" data-go="create" aria-selected="true" title="Create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg><span>Create</span>
+      </button>
+      <button class="rail-item" role="tab" data-go="optimize" aria-selected="false" title="Optimize">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20 9 15m0 0-3-1M9 15l1-3M20 4l-6.5 6.5M14 4h6v6"/></svg><span>Optimize</span>
+      </button>
+      <button class="rail-item" role="tab" data-go="test" aria-selected="false" title="Test">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3h6M10 3v6.5L5.5 17A2 2 0 0 0 7.3 20h9.4a2 2 0 0 0 1.8-3L14 9.5V3"/></svg><span>Test</span>
+      </button>
+      <button class="rail-item" role="tab" data-go="compare" aria-selected="false" title="Compare">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4v16M5 8h5M5 8 3 14h4ZM14 8h5M19 8l-2 6h4Z"/></svg><span>Compare</span>
+      </button>
+    </div>
+    <div class="rail-group">
+      <button class="rail-item" role="tab" data-go="templates" aria-selected="false" title="Templates">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg><span>Templates</span>
+      </button>
+      <button class="rail-item" role="tab" data-go="library" aria-selected="false" title="Library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 5l3 15"/></svg><span>Library</span>
+      </button>
+      <button class="rail-item" role="tab" data-go="settings" aria-selected="false" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6 7.4 7.4M16.6 16.6l1.8 1.8M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8"/></svg><span>Settings</span>
+      </button>
+    </div>
+    <span class="rail-hint" aria-hidden="true"><kbd>⌘</kbd><kbd>K</kbd></span>
+  </nav>
+
+  <!-- ── workspace ───────────────────────────────────────────── -->
+  <main id="workspace" tabindex="-1">
+
+    <!-- landing ─────────────────────────────────────────────── -->
+    <section class="view" data-view="landing" hidden>
+      <div class="landing">
+        <div class="landing-hero">
+          <p class="eyebrow">Universal AI Prompt Architect</p>
+          <h1>Turn any idea into the right AI prompt.</h1>
+          <p class="lede">Describe what you want. The Prompt Architect works out how to communicate it to AI — then hands you a prompt built for the model you are actually using.</p>
+          <div class="hero-actions">
+            <button class="btn primary lg" data-go="create" data-focus="composer">Start building</button>
+            <button class="btn ghost lg" data-go="templates">Explore templates</button>
+          </div>
+          <p class="hero-note">No account. No key required. Works offline in your browser.</p>
+        </div>
+
+        <section class="landing-section">
+          <h2>How it works</h2>
+          <ol class="steps">
+            <li><span class="step-n">1</span><div><strong>Describe the situation</strong><p>Plain language. One line is enough. You do not need to know prompting.</p></div></li>
+            <li><span class="step-n">2</span><div><strong>It works out what is missing</strong><p>Intent, task type, constraints, risks and the target model's limits.</p></div></li>
+            <li><span class="step-n">3</span><div><strong>Take the prompt</strong><p>Structured, red-teamed, scored — with every line traceable to its source.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="landing-section">
+          <h2>Capabilities</h2>
+          <div class="caps">
+            <div class="cap"><h3>Built for one model</h3><p>Length, formatting and structure adapt to the model you are using instead of a generic template.</p></div>
+            <div class="cap"><h3>Red-teamed before delivery</h3><p>Failure modes are checked and repaired in place, then reported rather than hidden.</p></div>
+            <div class="cap"><h3>Honest by construction</h3><p>Unknowns become labelled assumptions. Nothing about you is invented.</p></div>
+            <div class="cap"><h3>Works with no key</h3><p>No-AI mode runs the full engine locally. Adding a provider key is optional and stays server-side.</p></div>
+          </div>
+        </section>
+
+        <section class="landing-section">
+          <h2>One line in, a specification out</h2>
+          <div class="transform">
+            <div class="transform-col">
+              <span class="label">Before</span>
+              <p class="quote">“I need AI to help me build a website for my project.”</p>
+            </div>
+            <div class="transform-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h13m0 0-5-5m5 5-5 5"/></svg>
+            </div>
+            <div class="transform-col">
+              <span class="label accent">After</span>
+              <pre class="mini-prompt" id="transformPreview" aria-live="polite">Generating preview…</pre>
+            </div>
+          </div>
+          <p class="hint" id="transformNote"></p>
+        </section>
+
+        <section class="landing-section center">
+          <h2>Start with what you already have</h2>
+          <p class="lede sm">Describe it, paste an existing prompt, or take a template and change two lines.</p>
+          <div class="hero-actions">
+            <button class="btn primary lg" data-go="create" data-focus="composer">Start building</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- create ──────────────────────────────────────────────── -->
+    <section class="view" data-view="create" hidden>
+      <div class="stage" id="createStage">
+        <div class="stage-head">
+          <h1>What are you trying to accomplish?</h1>
+          <p class="lede sm" id="createSub">Describe it however it comes out. One sentence is plenty.</p>
+        </div>
+
+        <div class="composer" id="composerWrap">
+          <label class="sr" for="composer">Describe what you want to accomplish</label>
+          <textarea id="composer" rows="3" placeholder="Describe what you want to accomplish.&#10;You don't need to know how to write the prompt." spellcheck="true"></textarea>
+          <div class="composer-foot">
+            <div class="foot-left">
+              <button class="ghost-btn" id="attachBtn" type="button" title="Attach a file or paste a prompt (not sent anywhere)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+                <span>Add material</span>
+              </button>
+              <span class="counter" id="counter">0 words</span>
+            </div>
+            <div class="foot-right">
+              <button class="ghost-btn danger" id="clearBtn" type="button" hidden>Clear</button>
+            </div>
+          </div>
+          <div class="attachments" id="attachments" hidden></div>
+        </div>
+
+        <div class="controls" role="group" aria-label="Generation options">
+          <button class="select" id="selTarget" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-label">Target AI</span><span class="select-value" data-value>Auto detect</span>
+          </button>
+          <button class="select" id="selTask" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-label">Task</span><span class="select-value" data-value>Auto detect</span>
+          </button>
+          <button class="select" id="selQuality" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-label">Quality</span><span class="select-value" data-value>Balanced</span>
+          </button>
+          <button class="select subtle" id="selMode" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-label">Mode</span><span class="select-value" data-value>Auto</span>
+          </button>
+          <button class="text-btn" id="advancedToggle" type="button" aria-expanded="false" aria-controls="advancedPanel">
+            <span>More options</span>
+            <svg class="chev" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+
+        <div class="advanced" id="advancedPanel" hidden>
+          <div class="field"><label for="optAudience">Audience</label><input id="optAudience" type="text" placeholder="e.g. hiring managers"></div>
+          <div class="field"><label for="optTone">Tone</label><input id="optTone" type="text" placeholder="e.g. direct, no filler"></div>
+          <div class="field"><label for="optLength">Length</label><input id="optLength" type="text" placeholder="e.g. under 400 words"></div>
+          <div class="field wide"><label for="optInstructions">Anything else the model must know</label><input id="optInstructions" type="text" placeholder="Constraints, context, things to avoid"></div>
+        </div>
+
+        <div class="cta-row" id="ctaRow">
+          <button class="btn primary xl" id="generateBtn" type="button">
+            <span class="btn-label">Generate prompt</span>
+            <kbd class="btn-kbd">⌘↵</kbd>
+          </button>
+          <p class="hint" id="generateHint">Deterministic engine · nothing leaves this device unless a provider is configured.</p>
+        </div>
+
+        <div id="quickstart" class="quickstart">
+          <p class="label">Or start from an example</p>
+          <div class="chips" id="quickChips"></div>
+        </div>
+      </div>
+
+      <!-- generation state -->
+      <div class="generating" id="generating" hidden aria-live="polite">
+        <div class="gen-inner">
+          <div class="gen-head">
+            <span class="spinner" aria-hidden="true"></span>
+            <h2 id="genTitle">Understanding your objective</h2>
+          </div>
+          <ul class="stages" id="genStages"></ul>
+          <button class="text-btn" id="cancelGen" type="button">Cancel</button>
+        </div>
+      </div>
+
+      <!-- result -->
+      <div class="result" id="result" hidden aria-live="polite">
+        <div class="result-grid">
+          <div class="col request-col">
+            <div class="col-head">
+              <span class="label">Your request</span>
+              <button class="text-btn sm" id="editRequest" type="button">Edit</button>
+            </div>
+            <p class="request-text" id="resultRequest"></p>
+            <div class="request-meta" id="resultMeta"></div>
+          </div>
+
+          <div class="col prompt-col">
+            <div class="col-head">
+              <span class="label">Generated prompt</span>
+              <div class="mode-switch" role="group" aria-label="Output mode">
+                <button type="button" data-outmode="prompt" class="on">Prompt</button>
+                <button type="button" data-outmode="workflow">Workflow</button>
+                <button type="button" data-outmode="agent">Agent</button>
+              </div>
+            </div>
+            <div class="prompt-toolbar" role="toolbar" aria-label="Prompt actions">
+              <button class="tbtn" data-act="copy" title="Copy — ⌘⇧C">Copy</button>
+              <button class="tbtn" data-act="edit" title="Edit in place">Edit</button>
+              <button class="tbtn" data-act="regenerate" title="Regenerate">Regenerate</button>
+              <div class="tbtn-menu">
+                <button class="tbtn" data-act="improveMenu" aria-haspopup="listbox" aria-expanded="false">Improve ▾</button>
+              </div>
+              <button class="tbtn" data-act="save" title="Save — ⌘S">Save</button>
+              <button class="tbtn" data-act="export" title="Download .md">Export</button>
+            </div>
+            <pre class="prompt-editor" id="promptOut" tabindex="0"></pre>
+            <div class="prompt-foot">
+              <span class="small dim" id="promptStats"></span>
+            </div>
+          </div>
+
+          <aside class="col side-col" id="sidePanel">
+            <div class="score-block">
+              <div class="score-head">
+                <span class="label">Quality score</span>
+                <span class="score-band" id="scoreBand"></span>
+              </div>
+              <div class="score-value"><strong id="scoreNum">—</strong><span>/100</span></div>
+              <div class="dims" id="scoreDims"></div>
+              <p class="tiny dim" id="scoreNote"></p>
+            </div>
+
+            <details class="why" id="whyPanel">
+              <summary>Why this works</summary>
+              <div id="whyBody"></div>
+            </details>
+
+            <details class="why" id="sourcesPanel">
+              <summary>Line sources</summary>
+              <div id="sourcesBody" class="tiny"></div>
+            </details>
+
+            <details class="why" id="questionsPanel" hidden>
+              <summary>Before you send it</summary>
+              <div id="questionsBody"></div>
+            </details>
+
+            <div class="side-actions">
+              <button class="btn ghost sm" data-act="test">Test this prompt</button>
+              <button class="btn ghost sm" data-act="compare">Compare a version</button>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- optimize ────────────────────────────────────────────── -->
+    <section class="view" data-view="optimize" hidden>
+      <div class="stage narrow">
+        <div class="stage-head">
+          <h1>Improve an existing prompt</h1>
+          <p class="lede sm">Paste a prompt you already use. It will be diagnosed, rebuilt, and scored against the original.</p>
+        </div>
+        <label class="sr" for="optInput">Prompt to improve</label>
+        <textarea id="optInput" class="prompt-input" rows="7" placeholder="Paste your prompt here…"></textarea>
+        <div class="controls">
+          <button class="select" id="optTarget" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="select-label">Target AI</span><span class="select-value" data-value>Auto detect</span>
+          </button>
+        </div>
+        <div class="cta-row">
+          <button class="btn primary xl" id="optimizeBtn" type="button">Optimize prompt</button>
+        </div>
+        <div id="optResult" hidden>
+          <div class="delta" id="optDelta"></div>
+          <div class="col-head"><span class="label">Rebuilt prompt</span>
+            <button class="tbtn" data-copy="optOut">Copy</button>
+          </div>
+          <pre class="prompt-editor" id="optOut" tabindex="0"></pre>
+          <details class="why" open><summary>What changed and why</summary><div id="optWhy"></div></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- test ────────────────────────────────────────────────── -->
+    <section class="view" data-view="test" hidden>
+      <div class="stage narrow">
+        <div class="stage-head">
+          <h1>Evaluate a prompt</h1>
+          <p class="lede sm">Paste one to three prompts. Each is scored on the same seven metrics, and a winner is recommended.</p>
+        </div>
+        <div class="test-inputs" id="testInputs">
+          <div class="field block">
+            <label for="testA">Prompt A</label>
+            <textarea id="testA" rows="6" placeholder="Paste the first prompt…"></textarea>
+          </div>
+          <div class="field block" id="testBWrap">
+            <label for="testB">Prompt B <span class="dim">(optional)</span></label>
+            <textarea id="testB" rows="6" placeholder="Paste a second version…"></textarea>
+          </div>
+          <div class="field block" id="testCWrap" hidden>
+            <label for="testC">Prompt C <span class="dim">(optional)</span></label>
+            <textarea id="testC" rows="6" placeholder="Paste a third version…"></textarea>
+          </div>
+        </div>
+        <div class="cta-row">
+          <button class="btn primary xl" id="runTestBtn" type="button">Run evaluation</button>
+          <button class="text-btn" id="addPromptBtn" type="button">+ Add a third prompt</button>
+        </div>
+        <div id="testResult" hidden>
+          <div class="verdict" id="testVerdict"></div>
+          <div class="table-wrap"><table class="metrics" id="testTable"></table></div>
+          <p class="tiny dim" id="testCalibration"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- compare ─────────────────────────────────────────────── -->
+    <section class="view" data-view="compare" hidden>
+      <div class="stage narrow">
+        <div class="stage-head">
+          <h1>Compare prompts</h1>
+          <p class="lede sm">Up to three prompts, one table, strongest option highlighted.</p>
+        </div>
+        <div class="test-inputs" id="cmpInputs">
+          <div class="field block"><label for="cmpA">Prompt A</label><textarea id="cmpA" rows="5"></textarea></div>
+          <div class="field block"><label for="cmpB">Prompt B</label><textarea id="cmpB" rows="5"></textarea></div>
+          <div class="field block"><label for="cmpC">Prompt C <span class="dim">(optional)</span></label><textarea id="cmpC" rows="5"></textarea></div>
+        </div>
+        <div class="cta-row"><button class="btn primary xl" id="runCompareBtn" type="button">Compare</button></div>
+        <div id="cmpResult" hidden>
+          <div class="verdict" id="cmpVerdict"></div>
+          <div class="table-wrap"><table class="metrics" id="cmpTable"></table></div>
+          <p class="tiny dim" id="cmpCalibration"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- templates ───────────────────────────────────────────── -->
+    <section class="view" data-view="templates" hidden>
+      <div class="stage">
+        <div class="stage-head">
+          <h1>Templates</h1>
+          <p class="lede sm">Reusable prompt architectures. Open one, change two lines, generate.</p>
+          <div class="search-row">
+            <input id="tplSearch" type="search" placeholder="Search templates" aria-label="Search templates">
+            <div class="chips" id="tplFilters"></div>
+          </div>
+        </div>
+        <div class="grid" id="tplGrid"></div>
+      </div>
+    </section>
+
+    <!-- library ─────────────────────────────────────────────── -->
+    <section class="view" data-view="library" hidden>
+      <div class="stage">
+        <div class="stage-head">
+          <h1>Library</h1>
+          <p class="lede sm" id="libSub">Saved prompts live in this browser. Nothing is uploaded.</p>
+          <div class="search-row">
+            <input id="libSearch" type="search" placeholder="Search saved prompts" aria-label="Search saved prompts">
+            <div class="chips" id="libFilters"></div>
+          </div>
+        </div>
+        <div class="grid" id="libGrid"></div>
+        <div class="empty" id="libEmpty">
+          <h3>Nothing saved yet</h3>
+          <p>Generate a prompt and press Save — it will appear here with its score and target model.</p>
+          <button class="btn ghost" data-go="create">Go to Create</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- settings ────────────────────────────────────────────── -->
+    <section class="view" data-view="settings" hidden>
+      <div class="stage narrow">
+        <div class="stage-head"><h1>Settings</h1><p class="lede sm">Stored locally. Takes effect immediately.</p></div>
+
+        <div class="setting-group">
+          <h2>General</h2>
+          <div class="setting"><div><strong>Theme</strong><p class="tiny dim">Dark by default. Light respects bright rooms.</p></div>
+            <div class="seg" id="setTheme"><button data-v="dark">Dark</button><button data-v="light">Light</button><button data-v="system">System</button></div></div>
+          <div class="setting"><div><strong>Reduced motion</strong><p class="tiny dim">Removes ambient animation and transitions.</p></div>
+            <button class="switch" id="setMotion" role="switch" aria-checked="false"><span></span></button></div>
+        </div>
+
+        <div class="setting-group">
+          <h2>Defaults</h2>
+          <div class="setting"><div><strong>Target AI</strong><p class="tiny dim">Pre-selected for new prompts.</p></div>
+            <button class="select sm" id="setTarget" type="button" aria-haspopup="listbox" aria-expanded="false"><span class="select-value" data-value>Auto detect</span></button></div>
+          <div class="setting"><div><strong>Quality</strong><p class="tiny dim">How much specification the prompt carries.</p></div>
+            <button class="select sm" id="setQuality" type="button" aria-haspopup="listbox" aria-expanded="false"><span class="select-value" data-value>Balanced</span></button></div>
+        </div>
+
+        <div class="setting-group">
+          <h2>Interface</h2>
+          <div class="setting"><div><strong>Ambient background</strong><p class="tiny dim">The atmospheric field behind the interface.</p></div>
+            <button class="switch on" id="setField" role="switch" aria-checked="true"><span></span></button></div>
+          <div class="setting"><div><strong>Compact density</strong><p class="tiny dim">Tighter spacing on small screens.</p></div>
+            <button class="switch" id="setCompact" role="switch" aria-checked="false"><span></span></button></div>
+        </div>
+
+        <div class="setting-group">
+          <h2>AI provider</h2>
+          <p class="tiny dim">The engine works without any provider. A provider key enables optional wording refinement, and is only ever read server-side.</p>
+          <div class="setting"><div><strong>Preferred provider</strong><p class="tiny dim" id="providerNote">Checking what is configured…</p></div>
+            <button class="select sm" id="setProvider" type="button" aria-haspopup="listbox" aria-expanded="false"><span class="select-value" data-value>Auto</span></button></div>
+        </div>
+
+        <div class="setting-group">
+          <h2>Data</h2>
+          <div class="setting"><div><strong>Saved prompts</strong><p class="tiny dim" id="dataCount">0 saved</p></div>
+            <div class="row">
+              <button class="btn ghost sm" id="exportAll">Export JSON</button>
+              <button class="btn ghost sm danger" id="wipeData">Delete all</button>
+            </div></div>
+        </div>
+
+        <p class="tiny dim about">PromptForge <span id="versionTag"></span> · deterministic engine, no tracking, no third-party scripts.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ── mobile tab bar ──────────────────────────────────────── -->
+<nav class="tabbar" aria-label="Primary mobile">
+  <button data-go="create" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg><span>Create</span></button>
+  <button data-go="templates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg><span>Templates</span></button>
+  <button data-go="library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h4v16H5zM11 4h4v16h-4zM17 5l3 15"/></svg><span>Library</span></button>
+  <button data-go="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21"/></svg><span>Settings</span></button>
+</nav>
+
+<!-- ── command palette ─────────────────────────────────────── -->
+<div class="overlay" id="palette" hidden>
+  <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+    <label class="sr" for="paletteInput">Search actions</label>
+    <input id="paletteInput" type="text" placeholder="Search actions…" autocomplete="off">
+    <ul id="paletteList" role="listbox" aria-label="Actions"></ul>
+  </div>
+</div>
+
+<!-- ── onboarding ──────────────────────────────────────────── -->
+<div class="overlay" id="onboarding" hidden>
+  <div class="modal onboarding" role="dialog" aria-modal="true" aria-labelledby="onbTitle">
+    <h2 id="onbTitle">Three quick choices</h2>
+    <p class="lede sm">Optional — it only changes the defaults. You can skip everything.</p>
+    <div class="onb-block">
+      <span class="label">What do you mostly use AI for?</span>
+      <div class="chips" data-onb="use">
+        <button data-v="academic">Academic</button><button data-v="coding">Coding</button>
+        <button data-v="creative">Creative</button><button data-v="professional">Professional</button><button data-v="everything">Everything</button>
+      </div>
+    </div>
+    <div class="onb-block">
+      <span class="label">Preferred experience?</span>
+      <div class="chips" data-onb="experience">
+        <button data-v="simple">Simple</button><button data-v="balanced">Balanced</button><button data-v="advanced">Advanced</button>
+      </div>
+    </div>
+    <div class="onb-block">
+      <span class="label">Favourite AI <span class="dim">(optional)</span></span>
+      <div class="chips" data-onb="favourite">
+        <button data-v="">Skip</button><button data-v="chatgpt">ChatGPT</button><button data-v="claude">Claude</button>
+        <button data-v="gemini">Gemini</button><button data-v="grok">Grok</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="text-btn" id="onbSkip" type="button">Skip all</button>
+      <button class="btn primary" id="onbDone" type="button">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── provider dialog ─────────────────────────────────────── -->
+<div class="overlay" id="providerDialog" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="provTitle">
+    <h2 id="provTitle">Intelligence source</h2>
+    <p class="lede sm">The Prompt Architect decides <em>what</em> intelligence is needed; the router decides <em>which model</em> provides it. With no key configured, the deterministic engine runs alone — the prompts it produces are identical in structure either way.</p>
+    <ul class="prov-list" id="provList"></ul>
+    <p class="tiny dim" id="provFoot"></p>
+    <div class="modal-actions"><button class="btn ghost" id="provClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

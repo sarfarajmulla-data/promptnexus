@@ -1,0 +1,67 @@
+name: Bug report
+description: Something does not work as documented
+title: "[Bug] "
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The engine is deterministic, so an exact input is usually enough to
+        reproduce a problem precisely. The more exact the input, the faster this
+        gets fixed.
+
+        **Do not report security vulnerabilities here.** See [SECURITY.md](../SECURITY.md).
+
+  - type: textarea
+    id: input
+    attributes:
+      label: Exact input
+      description: The precise text you typed or sent, inside quotes.
+      placeholder: '"help me revise for my dbms exam"'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+      description: Paste the output. If it is long, include the relevant section.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did this happen?
+      options:
+        - Web UI
+        - HTTP API
+        - CLI
+        - Library import
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Shown in Settings, or in the response `meta.version` field.
+      placeholder: "1.0.0"
+
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target AI selected
+      options:
+        - Auto detect
+        - A specific model (name it in the description)
+        - Not applicable
+    validations:
+      required: false

@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest a capability, task category, model profile or technique
+title: "[Feature] "
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        PromptForge has three hard constraints that decide most requests:
+
+        - **No dependencies.** The engine runs offline with no supply chain.
+        - **Deterministic.** No model in the prompt-generation path.
+        - **Honest.** No invented facts, no unverified capability claims.
+
+        Requests that fit those constraints are very welcome.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of request is this?
+      options:
+        - New task category (a domain the engine misclassifies)
+        - New model profile (a target AI to optimise for)
+        - New technique (a prompting method to apply)
+        - Quality of generated prompts (wording, structure, length)
+        - Interface or workflow
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the input that currently produces a poor result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description: If you have an exact input that misbehaves, include it — it becomes a test case.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+    validations:
+      required: false

@@ -1,0 +1,30 @@
+version: 2
+
+updates:
+  # The project has no dependencies by design, but the workflow actions
+  # themselves need to stay current — stale actions are a real supply-chain risk.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    labels:
+      - dependencies
+
+  # Tracked explicitly so a dependency cannot be introduced unnoticed.
+  # With zero dependencies this should normally produce no pull requests.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore
+      include: scope
+    labels:
+      - dependencies
