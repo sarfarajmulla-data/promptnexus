@@ -43,7 +43,7 @@ jobs:
             const dev = Object.keys(pkg.devDependencies || {});
             if (deps.length || dev.length) {
               console.error('Runtime dependencies found:', [...deps, ...dev].join(', '));
-              console.error('PromptNexus is dependency-free by design.');
+              console.error('PromptForge is dependency-free by design.');
               process.exit(1);
             }
             console.log('Zero dependencies ✓');

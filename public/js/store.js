@@ -3,7 +3,27 @@
  * subscribe list, no framework. Every write notifies once.
  */
 
-const KEY = 'promptnexus.v1';
+const KEY = 'promptforge.v1';
+
+/**
+ * The name this project shipped its first beta under. Anyone who used that
+ * build has their library, drafts and settings under the old key, so the first
+ * load carries it across and removes the original. Delete this once no
+ * pre-rename build can still be in use.
+ */
+const LEGACY_KEY = 'promptnexus.v1';
+
+function migrateLegacy() {
+  try {
+    const old = localStorage.getItem(LEGACY_KEY);
+    if (!old) return null;
+    localStorage.setItem(KEY, old);
+    localStorage.removeItem(LEGACY_KEY);
+    return old;
+  } catch {
+    return null;   // private mode, quota, or a hostile storage shim
+  }
+}
 
 const defaults = {
   onboarded: false,
@@ -20,7 +40,7 @@ const defaults = {
 
 function load() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY) ?? migrateLegacy();
     if (!raw) return structuredClone(defaults);
     const saved = JSON.parse(raw);
     return {

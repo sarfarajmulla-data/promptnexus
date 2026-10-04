@@ -47,7 +47,7 @@ down rather than rediscovered.
 
 | Key | Contents | Sensitivity |
 |---|---|---|
-| `promptnexus.v1` | Settings, draft, library, onboarding state | The user's own text, on the user's own device |
+| `promptforge.v1` | Settings, draft, library, onboarding state | The user's own text, on the user's own device |
 
 Bound to `localStorage` deliberately:
 

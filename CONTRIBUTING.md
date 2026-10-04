@@ -1,4 +1,4 @@
-# Contributing to PromptNexus
+# Contributing to PromptForge
 
 Thanks for considering a contribution. This project has an unusual constraint
 set, so please read the short version before opening a pull request.

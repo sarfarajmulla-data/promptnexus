@@ -1,9 +1,17 @@
 {
-  "name": "promptnexus",
+  "name": "promptforge",
   "version": "1.0.0",
-  "description": "Universal AI Prompt Architect \u2014 turns messy human intent into optimised, model-aware, verified prompts. Zero dependencies, runs offline.",
+  "description": "Universal AI Prompt Architect — turns messy human intent into optimised, model-aware, verified prompts. Zero dependencies, runs offline.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sarfarajmulla-data/promptnexus.git"
+  },
+  "homepage": "https://github.com/sarfarajmulla-data/promptnexus#readme",
+  "bugs": {
+    "url": "https://github.com/sarfarajmulla-data/promptnexus/issues"
+  },
   "engines": {
     "node": ">=18"
   },
@@ -13,7 +21,7 @@
     "./engine": "./src/core/pipeline/engine.mjs"
   },
   "bin": {
-    "promptnexus": "./src/cli/promptnexus.mjs"
+    "promptforge": "./src/cli/promptforge.mjs"
   },
   "files": [
     "src",
@@ -29,8 +37,8 @@
     "build": "node scripts/build-public-engine.mjs",
     "vercel-build": "node scripts/build-public-engine.mjs",
     "test": "node --test tests/*.test.mjs",
-    "cli": "node src/cli/promptnexus.mjs",
-    "demo": "node src/cli/promptnexus.mjs demo",
+    "cli": "node src/cli/promptforge.mjs",
+    "demo": "node src/cli/promptforge.mjs demo",
     "hooks": "node scripts/install-hooks.mjs",
     "prepare": "node scripts/install-hooks.mjs",
     "scan": "node scripts/scan-secrets.mjs",

@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        PromptNexus has three hard constraints that decide most requests:
+        PromptForge has three hard constraints that decide most requests:
 
         - **No dependencies.** The engine runs offline with no supply chain.
         - **Deterministic.** No model in the prompt-generation path.

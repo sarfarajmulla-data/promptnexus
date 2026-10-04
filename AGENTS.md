@@ -1,6 +1,6 @@
 # Agent instructions
 
-PromptNexus is built and maintained with AI coding agents. These instructions
+PromptForge is built and maintained with AI coding agents. These instructions
 apply to any agent working in this repository.
 
 The canonical project memory is **[`CLAUDE.md`](./CLAUDE.md)**. Read it first —

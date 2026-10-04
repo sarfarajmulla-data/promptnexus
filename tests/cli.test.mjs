@@ -1,7 +1,7 @@
 /**
  * CLI contract tests.
  *
- * These exist because of a real escape: `src/cli/promptnexus.mjs` imported
+ * These exist because of a real escape: `src/cli/promptforge.mjs` imported
  * `start` from `src/server/server.mjs`, which exported nothing. Every CLI
  * invocation — including the published `bin` entry — died with
  * `SyntaxError: The requested module does not provide an export named 'start'`,
@@ -17,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CLI = path.join(ROOT, 'src', 'cli', 'promptnexus.mjs');
+const CLI = path.join(ROOT, 'src', 'cli', 'promptforge.mjs');
 
 /** Run the CLI synchronously and return { status, stdout, stderr }. */
 function run(...args) {
@@ -32,7 +32,7 @@ function run(...args) {
 test('the CLI module loads and prints usage', () => {
   const { status, stdout } = run('--help');
   assert.equal(status, 0, 'help must exit 0');
-  assert.match(stdout, /PromptNexus/);
+  assert.match(stdout, /PromptForge/);
   assert.match(stdout, /USAGE/);
   // The help text is the product's contract with the user; if a command is
   // advertised it must be listed here.
@@ -114,7 +114,7 @@ test('serve binds a port, answers /api/health, and shuts down when killed', asyn
         if (res.ok) {
           const body = await res.json();
           assert.equal(body.ok, true);
-          assert.equal(body.service, 'promptnexus');
+          assert.equal(body.service, 'promptforge');
           healthy = true;
         }
       } catch { /* not up yet */ }

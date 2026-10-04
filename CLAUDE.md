@@ -1,4 +1,4 @@
-# Project: PromptNexus
+# Project: PromptForge
 
 ## What this product does
 

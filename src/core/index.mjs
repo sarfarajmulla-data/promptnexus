@@ -1,7 +1,7 @@
 /**
- * PromptNexus — public API.
+ * PromptForge — public API.
  *
- *   import { architect } from 'promptnexus';
+ *   import { architect } from 'promptforge';
  *   const r = architect('I need a prompt to help me revise for my DBMS exam');
  *   console.log(r.prompt);
  *

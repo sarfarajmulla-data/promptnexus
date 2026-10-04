@@ -57,8 +57,21 @@ function buildContext(raw, options = {}) {
   const t0 = trace.start();
   const intent = detectIntent(clean);
   const categories = classifyCategories(clean);
+  const analysis = { intent, categories };
+
+  // Extraction runs before this stage is recorded, because the stage summary is
+  // what `strategy.rationale` reports back to the user. When an override attempt
+  // was stripped, the raw headline is attacker-controlled text: echoing it would
+  // state that the attack was understood as the objective, contradicting `goal`
+  // (which correctly degrades). The guarded `spec.topic` is the same value the
+  // goal sentence is built from, so the two can no longer disagree.
+  const spec = extractSpec(clean, analysis);
+  const understood = spec.injectedContent
+    ? (spec.topic || '(no task remained once flagged content was removed)')
+    : (intent.headline || '(short request)');
+
   trace.stage('understand', 'Understand', {
-    summary: `Objective read as: ${intent.headline || '(short request)'}`,
+    summary: `Objective read as: ${understood}`,
     decisions: [
       { text: `Primary task: ${categories.primary.label}`, detail: categories.primary.hits?.length ? `matched on: ${categories.primary.hits.slice(0, 6).join(', ')}` : 'no strong signal — treated as unclassified' },
       ...(categories.secondary.length ? [{ text: `Also involves: ${categories.secondary.map((c) => c.label).join(', ')}` }] : []),
@@ -66,9 +79,7 @@ function buildContext(raw, options = {}) {
   });
   trace.closeStage(t0);
 
-  /* 2 — extract */
-  const analysis = { intent, categories };
-  const spec = extractSpec(clean, analysis);
+  /* 2 — complexity */
   const complexity = assessComplexity({ intent, categories, spec, flags: {}, raw: clean });
 
   /* 3 — target */
@@ -406,7 +417,7 @@ function composeResult(ctx, options) {
 
   return {
     version: '1.0',
-    engine: 'promptnexus',
+    engine: 'promptforge',
     mode: ctx.modes.primary,
     modes: ctx.modes.list.map((m) => m.id),
 
@@ -529,7 +540,7 @@ function improveExistingPrompt(ctx, options) {
   if (isCompress) {
     const c = compressPrompt(ctx.raw);
     return {
-      version: '1.0', engine: 'promptnexus', mode: 'compress', modes: ctx.modes.list.map((m) => m.id),
+      version: '1.0', engine: 'promptforge', mode: 'compress', modes: ctx.modes.list.map((m) => m.id),
       goal: 'Compress the prompt without losing the load-bearing instructions.',
       original: { prompt: diag.text, stats: diag.stats, score: diag.dimensionScores.overall },
       compressed: { prompt: c.text, tokens: c.after.tokens, words: c.after.words, saved: c.saved, keptRules: c.keptRules },
@@ -544,7 +555,7 @@ function improveExistingPrompt(ctx, options) {
   if (isTest) {
     const t = testPrompt(ctx.raw);
     return {
-      version: '1.0', engine: 'promptnexus', mode: 'test', modes: ctx.modes.list.map((m) => m.id),
+      version: '1.0', engine: 'promptforge', mode: 'test', modes: ctx.modes.list.map((m) => m.id),
       goal: 'Simulate how this prompt fails before you rely on it.',
       original: { prompt: diag.text, stats: diag.stats },
       resiliency: t.resiliency,
@@ -564,7 +575,7 @@ function improveExistingPrompt(ctx, options) {
     const tr = translatePrompt(source, ctx.target);
     const translated = analyzePrompt(tr.text);
     return {
-      version: '1.0', engine: 'promptnexus', mode: 'translate', modes: ctx.modes.list.map((m) => m.id),
+      version: '1.0', engine: 'promptforge', mode: 'translate', modes: ctx.modes.list.map((m) => m.id),
       goal: `Rewrite this prompt for ${ctx.target.label} without changing its intent.`,
       original: { prompt: source, stats: analyzePrompt(source).stats },
       prompt: tr.text,
@@ -691,7 +702,7 @@ function compareExistingPrompts(ctx) {
   const [a, b] = splitPromptPair(ctx.raw);
   const cmp = comparePrompts(a, b, { labelA: 'Prompt A', labelB: 'Prompt B' });
   return {
-    version: '1.0', engine: 'promptnexus', mode: 'compare', modes: ctx.modes.list.map((m) => m.id),
+    version: '1.0', engine: 'promptforge', mode: 'compare', modes: ctx.modes.list.map((m) => m.id),
     goal: 'Determine which prompt is stronger, and why.',
     prompts: { A: a.trim(), B: b.trim() },
     rows: cmp.rows.map((r) => ({ dimension: humaniseDim(r.dimension), a: r.a, b: r.b, better: r.better, gap: Math.abs(r.a - r.b) })),
@@ -779,7 +790,7 @@ export function explain(result, originalPrompt = null) {
 
 export function errorResult(message) {
   return {
-    version: '1.0', engine: 'promptnexus', error: message,
+    version: '1.0', engine: 'promptforge', error: message,
     goal: '', prompt: '', score: { total: 0, band: 'n/a', verdict: message, dimensions: [], levers: [] },
     strategy: { summary: message, techniques: [], categories: [], complexity: { level: 0, label: 'n/a' }, sections: [] },
     warnings: [message], limitations: [],

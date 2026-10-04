@@ -167,7 +167,7 @@ export function start(port = PORT, host = HOST) {
     });
     server.listen(parsed, host, () => {
       const actual = server.address().port;
-      console.log(`PromptNexus running on http://${host}:${actual}`);
+      console.log(`PromptForge running on http://${host}:${actual}`);
       console.log(`  app      → http://localhost:${actual}/`);
       console.log(`  api      → http://localhost:${actual}/api/health`);
       console.log(`  engine   → http://localhost:${actual}/engine/index.mjs`);

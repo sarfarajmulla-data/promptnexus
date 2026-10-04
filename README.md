@@ -1,8 +1,8 @@
-# PromptNexus
+# PromptForge
 
 **Turn any idea into the right AI prompt.**
 
-Describe what you want to accomplish in plain language. PromptNexus works out
+Describe what you want to accomplish in plain language. PromptForge works out
 what you actually need, builds a prompt for the specific model you are using,
 breaks it on purpose to find the weak points, repairs them, and scores the
 result honestly.
@@ -30,7 +30,7 @@ you.** Ask for a blog-post prompt and it will helpfully add "audience: young
 professionals aged 25–34" — a fabrication you never said, which then contaminates
 everything downstream.
 
-PromptNexus is a rule engine, not a model. That is what makes it able to promise:
+PromptForge is a rule engine, not a model. That is what makes it able to promise:
 
 | Guarantee | How it is enforced |
 |---|---|
@@ -62,13 +62,13 @@ appears, something has gone wrong.
 ### CLI
 
 ```bash
-node src/cli/promptnexus.mjs "help me plan a week-long trip to Kerala on a mid budget"
-node src/cli/promptnexus.mjs improve "<paste a weak prompt>"
-node src/cli/promptnexus.mjs compress "<paste a bloated prompt>"
-node src/cli/promptnexus.mjs test "<paste a prompt>"          # 8-scenario failure simulation
-node src/cli/promptnexus.mjs compare "<prompt A>" "<prompt B>"
-node src/cli/promptnexus.mjs demo                             # six worked examples
-cat notes.txt | node src/cli/promptnexus.mjs --minimal        # pipe anything in
+node src/cli/promptforge.mjs "help me plan a week-long trip to Kerala on a mid budget"
+node src/cli/promptforge.mjs improve "<paste a weak prompt>"
+node src/cli/promptforge.mjs compress "<paste a bloated prompt>"
+node src/cli/promptforge.mjs test "<paste a prompt>"          # 8-scenario failure simulation
+node src/cli/promptforge.mjs compare "<prompt A>" "<prompt B>"
+node src/cli/promptforge.mjs demo                             # six worked examples
+cat notes.txt | node src/cli/promptforge.mjs --minimal        # pipe anything in
 ```
 
 ### HTTP API
@@ -157,7 +157,7 @@ input
 **📊 Quality score /100** — and, uniquely, **🔍 line-by-line provenance**.
 
 ```bash
-node src/cli/promptnexus.mjs "my node script that uploads a csv keeps timing out" --why
+node src/cli/promptforge.mjs "my node script that uploads a csv keeps timing out" --why
 ```
 
 ```
@@ -181,7 +181,7 @@ no line in a generated prompt lacks a source.
 | Surface | Where | Notes |
 |---|---|---|
 | Beta UI | `public/` | Create · Optimize · Test · Compare · Templates · Library · Settings. Command palette, keyboard shortcuts, dark/light, reduced motion, full keyboard navigation |
-| CLI | `src/cli/promptnexus.mjs` | 11 commands, `--json`, `--minimal`, `--why`, `--out`, pipes |
+| CLI | `src/cli/promptforge.mjs` | 11 commands, `--json`, `--minimal`, `--why`, `--out`, pipes |
 | HTTP API | `api/` | Serverless functions over the same core |
 | Library | `src/core/index.mjs` | `architect(input, options)` |
 

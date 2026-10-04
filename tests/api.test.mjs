@@ -49,7 +49,7 @@ test('health reports a real engine self-check', async () => {
   assert.equal(res.status, 200);
   const data = await res.json();
   assert.equal(data.ok, true);
-  assert.equal(data.service, 'promptnexus');
+  assert.equal(data.service, 'promptforge');
   for (const check of ['pipeline', 'classifies', 'scoresInRange', 'traceable']) {
     assert.equal(data.checks[check], true, `${check} must pass`);
   }

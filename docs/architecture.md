@@ -1,4 +1,4 @@
-# PromptNexus — Architecture
+# PromptForge — Architecture
 
 This document explains how a messy request becomes a finished prompt, and why each stage is shaped the way it is.
 

@@ -24,7 +24,7 @@ export default handler(async () => {
 
   return {
     ok,
-    service: 'promptnexus',
+    service: 'promptforge',
     version: VERSION,
     engine: 'deterministic-local',
     checks,

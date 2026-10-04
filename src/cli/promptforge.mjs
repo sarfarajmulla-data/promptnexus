@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * PromptNexus CLI.
+ * PromptForge CLI.
  *
- *   promptnexus "i need to revise for my dbms exam next week"
- *   promptnexus "build me a portfolio site" --target claude --workflow
- *   promptnexus improve "<paste a prompt>" --json
- *   promptnexus compress "<paste a prompt>"
- *   promptnexus compare "<two prompts>"
- *   promptnexus serve --port 4317
+ *   promptforge "i need to revise for my dbms exam next week"
+ *   promptforge "build me a portfolio site" --target claude --workflow
+ *   promptforge improve "<paste a prompt>" --json
+ *   promptforge compress "<paste a prompt>"
+ *   promptforge compare "<two prompts>"
+ *   promptforge serve --port 4317
  */
 
 import { readFileSync } from 'node:fs';
@@ -47,29 +47,29 @@ function readStdinIfPiped() {
 /** Misuse: the command was named but its required input is missing. */
 function misuse(command) {
   console.error(c(C.red, `error: "${command}" needs some text to work on.`));
-  console.error(c(C.grey, `  try: promptnexus ${command} "<paste your text here>"`));
-  console.error(c(C.dim, '  run `promptnexus --help` for every option'));
+  console.error(c(C.grey, `  try: promptforge ${command} "<paste your text here>"`));
+  console.error(c(C.dim, '  run `promptforge --help` for every option'));
   process.exitCode = 1;
 }
 
 function usage() {
-  console.log(`${c(C.bold, 'PromptNexus')} ${c(C.grey, '— Universal AI Prompt Architect')}
+  console.log(`${c(C.bold, 'PromptForge')} ${c(C.grey, '— Universal AI Prompt Architect')}
 
 ${c(C.bold, 'USAGE')}
-  promptnexus "<your situation>"              Build the best prompt for it
-  promptnexus improve "<existing prompt>"     Diagnose and rebuild a prompt
-  promptnexus expand "<existing prompt>"      Add only what is missing
-  promptnexus compress "<existing prompt>"    Keep every constraint, cut the filler
-  promptnexus test "<existing prompt>"        Simulate how it fails, then harden it
-  promptnexus compare "<two prompts>"         Score both, declare a winner
-  promptnexus explain "<your situation>"      Show why the prompt is built that way
-  promptnexus targets                         List target model profiles
-  promptnexus modes                           List recognised operating modes
-  promptnexus serve                           Run the web app + JSON API
-  promptnexus demo                            Run a spread of example cases
+  promptforge "<your situation>"              Build the best prompt for it
+  promptforge improve "<existing prompt>"     Diagnose and rebuild a prompt
+  promptforge expand "<existing prompt>"      Add only what is missing
+  promptforge compress "<existing prompt>"    Keep every constraint, cut the filler
+  promptforge test "<existing prompt>"        Simulate how it fails, then harden it
+  promptforge compare "<two prompts>"         Score both, declare a winner
+  promptforge explain "<your situation>"      Show why the prompt is built that way
+  promptforge targets                         List target model profiles
+  promptforge modes                           List recognised operating modes
+  promptforge serve                           Run the web app + JSON API
+  promptforge demo                            Run a spread of example cases
 
 ${c(C.bold, 'FLAGS')}
-  --target <id>     Optimise for a specific model (see: promptnexus targets)
+  --target <id>     Optimise for a specific model (see: promptforge targets)
   --json            Output the full result object as JSON
   --minimal         Print the prompt only — nothing else
   --why             Show where every line of the prompt came from
@@ -79,8 +79,8 @@ ${c(C.bold, 'FLAGS')}
   --port <n>        Port for serve (default 4317)
 
 ${c(C.bold, 'PIPES')}
-  cat notes.txt | promptnexus improve --minimal > better-prompt.md
-  echo "help me plan a trip to japan" | promptnexus --json | jq .score.total
+  cat notes.txt | promptforge improve --minimal > better-prompt.md
+  echo "help me plan a trip to japan" | promptforge --json | jq .score.total
 `);
 }
 

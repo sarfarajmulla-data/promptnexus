@@ -1,5 +1,5 @@
 ---
-description: Security review of the current diff, against PromptNexus-specific risks
+description: Security review of the current diff, against PromptForge-specific risks
 ---
 
 # Security review
