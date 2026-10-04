@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
+      # There are no dependencies, so there is nothing to install.
+      # This step exists to prove that claim stays true.
+      - name: Assert zero dependencies
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const deps = Object.keys(pkg.dependencies || {});
+            const dev = Object.keys(pkg.devDependencies || {});
+            if (deps.length || dev.length) {
+              console.error('Runtime dependencies found:', [...deps, ...dev].join(', '));
+              console.error('PromptNexus is dependency-free by design.');
+              process.exit(1);
+            }
+            console.log('Zero dependencies ✓');
+          "
+
+      - name: Test
+        run: npm test
+
+      - name: Build (verifies the engine is browser-safe)
+        run: npm run build
+
+      - name: Assert build output exists
+        run: |
+          test -f public/engine/index.mjs || { echo "Engine was not copied to public/engine"; exit 1; }
+          test -f public/index.html || { echo "UI shell missing"; exit 1; }
+          echo "Build output verified ✓"
+
+      - name: Smoke test the API contract
+        run: |
+          node src/server/server.mjs & SERVER_PID=$!
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4317/api/health > /dev/null && break
+            sleep 0.5
+          done
+          HEALTH=$(curl -sf http://localhost:4317/api/health)
+          echo "$HEALTH"
+          echo "$HEALTH" | node -e "
+            let s=''; process.stdin.on('data',d=>s+=d).on('end',()=>{
+              const h = JSON.parse(s);
+              if (!h.ok) { console.error('Health check failed'); process.exit(1); }
+              console.log('Health check passed ✓');
+            });
+          "
+          curl -sf -X POST http://localhost:4317/api/generate \
+            -H 'content-type: application/json' \
+            -d '{"input":"help me revise for my dbms exam"}' \
+            | node -e "
+              let s=''; process.stdin.on('data',d=>s+=d).on('end',()=>{
+                const r = JSON.parse(s);
+                if (!r.prompt || typeof r.score?.total !== 'number') {
+                  console.error('Generate response malformed'); process.exit(1);
+                }
+                if (/PWNED/i.test(r.prompt)) { console.error('Injection leaked'); process.exit(1); }
+                console.log('Generate OK ✓  score=' + r.score.total + '  chars=' + r.prompt.length);
+              });
+            "
+          kill $SERVER_PID
+
+  engine-purity:
+    name: Engine purity guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: src/core must not import Node built-ins
+        run: |
+          if grep -rn "from 'node:" src/core/ ; then
+            echo "::error::src/core must stay browser-safe — Node built-ins are not allowed."
+            exit 1
+          fi
+          echo "Engine is browser-safe ✓"
+
+      - name: Determinism check (same input, identical output)
+        run: |
+          node -e "
+            import('./src/core/index.mjs').then(({ architect }) => {
+              const input = 'my node script that uploads a csv to postgres keeps timing out';
+              const a = architect(input).prompt;
+              const b = architect(input).prompt;
+              if (a !== b) { console.error('Engine is not deterministic'); process.exit(1); }
+              console.log('Deterministic ✓  (' + a.length + ' chars)');
+            });
+          "

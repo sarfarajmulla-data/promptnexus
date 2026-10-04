@@ -10,7 +10,7 @@
 import { TAXONOMY, CATEGORY_INDEX } from '../knowledge/taxonomy.mjs';
 import { TARGETS, TARGET_INDEX } from '../knowledge/targets.mjs';
 import { rankSignals, matchSignals, bestMatch } from '../util/match.mjs';
-import { normalizeInput, fold, countWords, sentences, clamp, stripMetaFrame, firstMeaningfulSentence } from '../util/text.mjs';
+import { normalizeInput, fold, countWords, sentences, clamp, stripMetaFrame, firstMeaningfulSentence, looksLikeTask } from '../util/text.mjs';
 
 /* ───────────────────────── intent ───────────────────────── */
 
@@ -63,9 +63,19 @@ export function detectIntent(raw) {
 
 /** Turn a classified intent into a one-line goal statement. */
 export function goalSentence(intent, primary, spec) {
-  const topic = (spec?.topic || intent.headline || '').replace(/[.?!]+$/, '').trim();
+  // When extraction flagged an override attempt, anything in the topic is
+  // treated as untrusted: it must pass a structural plausibility test on its own
+  // merits, and the raw headline is never used as a fallback. Otherwise a payload
+  // could become the objective the model is instructed to carry out.
+  let topic;
+  if (spec?.injectedContent) {
+    const candidate = String(spec?.topic || '').replace(/[.?!]+$/, '').trim();
+    topic = looksLikeTask(candidate) ? candidate : '';
+  } else {
+    topic = String(spec?.topic || intent.headline || '').replace(/[.?!]+$/, '').trim();
+  }
   const verb = ACTION_BY_CATEGORY[primary.id] || 'complete the task of';
-  if (!topic) return `Produce the best possible ${primary.label.toLowerCase()} deliverable.`;
+  if (!topic) return `Produce the best possible ${primary.label.split(/[/—]/)[0].trim().toLowerCase()} deliverable.`;
   const trimmedTopic = topic.length > 220 ? topic.slice(0, 217).trimEnd() + '…' : topic;
   // If the user's own sentence already opens with a verb, it *is* the goal —
   // stacking our own action verb on top would just restate it.

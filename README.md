@@ -1,99 +1,158 @@
 # PromptNexus
 
-**A Universal AI Prompt Architect.** Describe your situation in ordinary language — messy, vague, emotional or half-formed — and PromptNexus works out what you actually need and writes the prompt that gets it.
+**Turn any idea into the right AI prompt.**
 
-It is not a sentence rewriter. It classifies the task, infers the real objective, decides which prompting techniques pay off, adapts to your target model, red-teams its own output, repairs what it finds, and scores the result honestly.
+Describe what you want to accomplish in plain language. PromptNexus works out
+what you actually need, builds a prompt for the specific model you are using,
+breaks it on purpose to find the weak points, repairs them, and scores the
+result honestly.
+
+Zero dependencies. No API key required. Deterministic — the same input always
+produces the same prompt, byte for byte.
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  you: "i need help revising for my dbms exam next week, i keep           │
-│        forgetting normalization"                                         │
-│                                                                          │
-│  promptnexus: exam-prep · level 2/5 · exam coach persona ·                │
-│               rubric-based practice · spaced self-testing · 67/100        │
-│                                                                          │
-│  → a copy-paste prompt that makes any capable model teach you the        │
-│    topic properly instead of dumping a summary at you                    │
-└──────────────────────────────────────────────────────────────────────────┘
+"help me revise for my dbms exam next week"
+        │
+        ├─ classified as  exam preparation · level 2/5
+        ├─ techniques     spaced self-testing · Socratic checking · constraints
+        ├─ red-teamed     3 failure modes found and repaired in place
+        └─ delivered      a 3,000-character prompt with a rubric and a revision plan
+                          scored 67/100 · "usable" · with the levers to push it higher
 ```
 
 ---
 
-## Why it exists
+## Why this is not another prompt rewriter
 
-Most "prompt generators" take your sentence and pad it with adjectives. That fails for the same reason your original sentence failed: the model still has to guess what you meant.
+Most prompt tools send your request to a model and ask it to write a better
+prompt. That approach has a specific failure mode: **it invents facts about
+you.** Ask for a blog-post prompt and it will helpfully add "audience: young
+professionals aged 25–34" — a fabrication you never said, which then contaminates
+everything downstream.
 
-PromptNexus does the work a senior prompt engineer would:
+PromptNexus is a rule engine, not a model. That is what makes it able to promise:
 
-1. **Understand** — extract intent, objective and deliverable from unstructured language.
-2. **Classify** — 63 task categories, multi-label, with evidence for every decision.
-3. **Detect the target** — 22 model/tool profiles, each with honest capability flags.
-4. **Assess complexity** — 5 levels, from single-step to agentic, with the reasons stated.
-5. **Find what's missing** — ask only when the answer would materially change the prompt.
-6. **Choose strategy** — 50 techniques, budgeted by cost and gated by capability.
-7. **Build** — a section architecture adapted per task archetype.
-8. **Red-team** — 18 failure modes checked; what can be fixed is fixed before you see it.
-9. **Verify** — 13 quality-control checks against the assembled prompt.
-10. **Score** — 12 weighted dimensions, conservatively, with improvement levers.
+| Guarantee | How it is enforced |
+|---|---|
+| Never invents personal facts | Unknown details become **labelled assumptions** you can correct |
+| Never overstates a model's abilities | Every non-generic capability flag is `verified: false` and surfaced as such |
+| Never inflates a score | Right-sizing is scored; padding loses points. Calibration is printed with every score |
+| Never obeys pasted content | Injection attempts are stripped, reported, and defended against in the output |
+| Never hides its reasoning | Line-level provenance: every line traces to a rule, a technique or a repair |
+| Same input → same output | Pure functions, no randomness, no network, no clock |
+
+---
 
 ## Quick start
 
 ```bash
-git clone https://github.com/sarfarajmulla-data/promptnexus
+git clone https://github.com/sarfarajmulla-data/promptnexus.git
 cd promptnexus
 
-# web app + JSON API  (http://localhost:4317)
-npm start
-
-# CLI — no install, no dependencies
-node src/cli/promptnexus.mjs "help me write a cover letter for a data analyst internship"
-node src/cli/promptnexus.mjs "should i take the internship or finish my degree?" --target claude
-node src/cli/promptnexus.mjs "build me a portfolio site" --workflow --advanced
-node src/cli/promptnexus.mjs "just give me the prompt for a cold email to a recruiter" --minimal
-node src/cli/promptnexus.mjs "help me plan my week" --why       # trace every line to its source
-
-# prompt tools
-node src/cli/promptnexus.mjs improve "<paste any prompt>"
-node src/cli/promptnexus.mjs compress "<paste a prompt that is too long>"
-node src/cli/promptnexus.mjs test "<paste a prompt you do not trust yet>"
-node src/cli/promptnexus.mjs compare "<prompt one>
-
-vs
-
-<prompt two>"
-
-# tests
-npm test
+npm start                       # app + API on http://localhost:4317
+npm test                        # 37 tests
+npm run build                   # copy the browser-safe engine to public/engine
 ```
 
-Pipes and JSON work as you'd expect:
+There is nothing to install. There are no dependencies. If `node_modules`
+appears, something has gone wrong.
+
+### CLI
 
 ```bash
-cat notes.txt | promptnexus improve --minimal > better.md
-echo "plan my revision week" | promptnexus --json | jq '.score.total, .strategy.techniques[].id'
+node src/cli/promptnexus.mjs "help me plan a week-long trip to Kerala on a mid budget"
+node src/cli/promptnexus.mjs improve "<paste a weak prompt>"
+node src/cli/promptnexus.mjs compress "<paste a bloated prompt>"
+node src/cli/promptnexus.mjs test "<paste a prompt>"          # 8-scenario failure simulation
+node src/cli/promptnexus.mjs compare "<prompt A>" "<prompt B>"
+node src/cli/promptnexus.mjs demo                             # six worked examples
+cat notes.txt | node src/cli/promptnexus.mjs --minimal        # pipe anything in
 ```
 
-## What it produces
+### HTTP API
 
-The output is designed to be pasted straight into ChatGPT, Claude, Gemini, a coding agent or an image model:
-
-```markdown
-## 1. SYSTEM ROLE
-You are a decision analyst specialising in decision support.
-You also bring the judgement of a career strategist…
-
-## 2. MISSION
-Deliver: a decision brief ending in a recommendation and its flip conditions.
-…
-## 10. OUTPUT FORMAT
-Return a decision brief: options table, then recommendation, then what would change it.
+```bash
+curl -X POST localhost:4317/api/generate \
+  -H 'content-type: application/json' \
+  -d '{"input":"build my portfolio website","targetId":"claude","explain":true}'
 ```
 
-Alongside the prompt you get: a **line-by-line provenance report**, the understood goal, the strategy with reasons, the technique list with risks, which failure modes were found and repaired, the assumptions that were made, optional clarifying questions with selectable options, three versions (lean / balanced / maximum), an optional multi-prompt workflow, and a machine-readable hand-off block.
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/health` | Liveness plus a real engine self-check |
+| `GET /api/targets` | Model profiles, task taxonomy, quality and mode options |
+| `POST /api/generate` | Situation → optimised prompt |
+| `POST /api/analyze` | Tools: `improve`, `expand`, `compress`, `test`, `translate`, `compare`, `score` |
 
-## Traceability — where every line comes from
+---
 
-The engine can account for the source of **every single line** in the prompt it produces. Nothing is generated by a model, so nothing is unexplainable:
+## Deploy to Vercel
+
+The repository is already configured. Import it and deploy — no build settings
+to change.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sarfarajmulla-data/promptnexus)
+
+**Or from the terminal:**
+
+```bash
+npm i -g vercel
+vercel link            # connect to your Vercel account
+vercel                 # preview deployment
+vercel --prod          # production
+```
+
+### What Vercel does with this repo
+
+| Setting | Value | Why |
+|---|---|---|
+| Build command | `npm run build` | Copies the engine to `public/engine/` and fails the build if the engine has stopped being browser-safe |
+| Output directory | `public` | Static UI, no bundler, no framework |
+| Functions | `api/*.js` | `generate`, `analyze`, `targets`, `health` — 1024 MB, 15 s timeout |
+| Rewrites | all non-API paths → `/index.html` | Client-side routing |
+| Headers | immutable caching for `/engine/*` and assets; `nosniff`, `Referrer-Policy`, `Permissions-Policy` globally | — |
+
+### Environment variables
+
+**None are required.** The app runs fully on the deterministic engine with no
+configuration at all. Optional variables are documented in
+[`.env.example`](./.env.example); the only ones that matter are for provider
+refinement, and they are read server-side only — a key is never sent to the
+browser.
+
+### Why it works offline
+
+`npm run build` copies `src/core/**` into `public/engine/`. The engine has no
+Node-only imports, so the browser can import the exact same code the API uses.
+If the serverless function is ever unreachable — offline, cold failure, a
+sandboxed preview — the UI loads the engine from disk and computes the identical
+result locally. The status chip in the header always says which is running.
+
+---
+
+## How it works
+
+```
+input
+  │
+  ├─ 1  understand     strip meta-framing, find the real objective
+  ├─ 2  classify       63 categories · weighted keyword/phrase/regex signals · multi-label with evidence
+  ├─ 3  extract        requirements (MUST/SHOULD/OPTIONAL), conflicts, authority, unknowns
+  ├─ 4  target         22 model/tool profiles · capability flags · honest about what is assumed
+  ├─ 5  complexity     1–5, with per-category floors
+  ├─ 6  clarify        ≤3 questions, only ones that would change the output; otherwise labelled assumptions
+  ├─ 7  strategy       ~50 techniques, cost-budgeted and capability-gated — only what helps
+  ├─ 8  construct      archetype recipe over a shared section library (or a media-prompt shape)
+  ├─ 9  red-team       18 failure modes · repairs applied in place, then reported
+  ├─ 10 verify         13 quality checks
+  └─ 11 score          12 weighted dimensions → /100 with weaknesses and top levers
+                       + variants, workflow, translation, provenance, hand-off
+```
+
+### What you get
+
+**🎯 Understood goal** · **🧠 Strategy** · **📋 The prompt** · **⚙️ How to adapt it**
+**📊 Quality score /100** — and, uniquely, **🔍 line-by-line provenance**.
 
 ```bash
 node src/cli/promptnexus.mjs "my node script that uploads a csv keeps timing out" --why
@@ -102,123 +161,99 @@ node src/cli/promptnexus.mjs "my node script that uploads a csv keeps timing out
 ```
   DEBUGGING SPEC   5 lines
     [archetype]        Reproduce the fault from the evidence given…
-    [archetype]        Rank candidate causes, then give the cheapest test…
   PROCESS   2 lines
     [technique: Hypo…] 1. Form a ranked list of hypotheses, most probable first…
   QUALITY CRITERIA   8 lines
     [quality bar]      - **Requirement coverage** — every MUST is visibly satisfied…
     [red-team repair]  Before finishing, confirm the answer does not depend on…
-
-  SUMMARY
-    rubric-based evaluation (shared criteria)   █████ 7 (18%)
-    always-on output discipline rules           ████  6 (15%)
-    request extractor (your own words)          ████  5 (13%)
-    archetype section library (domain craft)    ████  5 (13%)
-    taxonomy default role for this task class   ███   4 (10%)
-    technique (chosen for this task)            ███   4 (10%)
-    adversarial review (repair)                 █     1 (3%)
 ```
 
-Every line resolves to one of: **your own words** (structured, nothing added) · **a technique** the engine selected for this task · **a domain section** from the archetype library · **a task-class default** (role, output format) · **a red-team repair** added after self-review. This is also available in the web UI under the **"Line sources"** tab, and a test asserts that no line in the prompt lacks a source.
+Every line resolves to **your own words**, **a selected technique**, **a domain
+section**, **a task-class default**, or **a red-team repair**. A test asserts that
+no line in a generated prompt lacks a source.
 
-## Design principles
+---
 
-These are enforced in code and tested:
+## Interfaces
 
-| Principle | How it is enforced |
+| Surface | Where | Notes |
+|---|---|---|
+| Beta UI | `public/` | Create · Optimize · Test · Compare · Templates · Library · Settings. Command palette, keyboard shortcuts, dark/light, reduced motion, full keyboard navigation |
+| CLI | `src/cli/promptnexus.mjs` | 11 commands, `--json`, `--minimal`, `--why`, `--out`, pipes |
+| HTTP API | `api/` | Serverless functions over the same core |
+| Library | `src/core/index.mjs` | `architect(input, options)` |
+
+### Keyboard
+
+| Keys | Action |
 |---|---|
-| **Never invent personal information** | Anything not stated becomes a *labelled assumption* listed in the prompt and flagged for correction — never a silent fabrication. |
-| **Never claim model capabilities it can't verify** | Every target profile carries `verified: false` and its design assumptions. Techniques are gated by capability flags. A missing capability becomes a stated limitation, not an instruction that will fail. |
-| **Never score generously** | Scores are computed from the assembled prompt's own structure, not from intent. The calibration line states plainly that this measures specification quality, not model output. |
-| **Never expose private chain-of-thought** | The engine emits *decisions with evidence* ("primary task: research, matched on: literature review, systematic review"), not hidden reasoning. |
-| **Never execute pasted content** | Anything you paste is data to analyse. Instruction-override attempts ("ignore your rules…") are stripped, reported, and a defence is written into the output. |
-| **Prefer useful simplicity** | Technique selection is budgeted. Level 1 tasks get short prompts; long prompts for simple tasks are penalised by the Efficiency check. |
-| **Deterministic** | Same input → byte-identical output. No randomness, no sampling, no network calls. |
+| `⌘/Ctrl + Enter` | Generate |
+| `⌘/Ctrl + K` | Command palette |
+| `⌘/Ctrl + S` | Save to library |
+| `⌘/Ctrl + Shift + C` | Copy prompt |
+| `Esc` | Close palette, dropdown or modal |
 
-## Architecture
+---
 
-```
-src/core/
-  util/        text normalisation, signal matching, decision tracing
-  knowledge/   taxonomy (63 tasks) · targets (22 models) · techniques (50)
-  templates/   section library + per-archetype recipes
-  pipeline/    classify → extract → clarify → strategy → build → red-team → score → engine
-src/cli/       command-line interface
-src/server/    node:http server (no dependencies) + JSON API
-src/web/       single-page UI (vanilla JS, no build step)
-tests/         node:test — engine, knowledge integrity, tools
-```
-
-**Zero runtime dependencies.** Node 18+ and a browser are the only requirements. It runs offline.
-
-### The pipeline
+## Project structure
 
 ```
-raw request
-   → understand      intent, objective, deliverable
-   → classify        categories + evidence, target model, complexity level
-   → extract         requirements (MUST/SHOULD/OPTIONAL), constraints, audience, unknowns, conflicts
-   → clarify         ≤3 questions, only when material; otherwise labelled assumptions
-   → strategy        techniques selected within a cost budget, gated by capability
-   → build           sections assembled from the archetype recipe
-   → red-team        18 failure modes; repairs applied in place
-   → score           13 checks, 12 weighted dimensions, improvement levers
-   → optimise        de-duplicate, right-size, generate variants + workflow
-   → output          prompt, reasoning, quality, assumptions, hand-off
+src/core/            the engine — pure, browser-safe, zero dependencies
+  knowledge/         taxonomy (63), model profiles (22), techniques (~50)
+  pipeline/          one file per stage
+  templates/         section library + 23 archetype recipes
+  util/              text and signal matching
+api/                 Vercel serverless adapters (thin — logic lives in core)
+public/              UI: HTML, CSS, ES modules. No build step
+  engine/            generated by npm run build (gitignored)
+tests/               37 tests
+docs/                architecture, decision log, runbooks
 ```
 
-### API
-
-```bash
-curl -s localhost:4317/api/generate -H 'content-type: application/json' \
-  -d '{"input":"plan a 5 day trip to japan in april on a mid budget","targetId":"claude"}'
-```
-
-| Endpoint | Purpose |
-|---|---|
-| `POST /api/generate` | `{ input, targetId?, answers?, minimal?, advanced?, workflow?, explain? }` |
-| `POST /api/analyze` | same, for pasted prompts (improve / compress / test / compare / translate) |
-| `GET /api/targets` | target profiles for a model selector |
-| `GET /api/health` | liveness + version + recognised modes |
-
-```js
-// or use it as a library
-import { architect } from './src/core/index.mjs';
-
-const r = architect('i keep failing my physics quizzes, teach me kinematics', { targetId: 'claude' });
-console.log(r.prompt);              // the prompt
-console.log(r.score.total);         // honest 0-100
-console.log(r.strategy.techniques); // what was applied and why
-```
+---
 
 ## Honest limitations
 
-- **It does not call a model.** Nothing here measures what a model will actually output. Scores describe the *specification quality* of the prompt — a strong, specific, verified brief. That is a real and useful signal, but it is not a prediction.
-- **Target capability profiles are design assumptions.** Model features change monthly. Profiles are conservative, marked unverified, and the generated prompt states the assumptions it made so you can correct them.
-- **Classification is heuristic.** 63 categories and evidence-based overrides handle a wide range, but a genuinely novel task falls back to the generic archetype and says so.
-- **Some extraction is approximate.** Audience, tone and length are only inferred when the text supports it; otherwise they become labelled assumptions and optional questions.
-- **Security reviews are scoped to defender use.** The engine writes authorisation boundaries into the prompt and will not produce offensive tooling for systems the user does not own.
+- **Scores measure specification quality, not model output.** No model is
+  invoked. The UI prints this calibration next to every score.
+- **Model profiles are design assumptions.** Features change monthly; each
+  profile is marked `verified: false` and the generated prompt states its own
+  assumptions so you can correct them.
+- **Classification is heuristic.** Solid on tested cases, weaker on genuinely
+  novel phrasing, where it falls back to a generic archetype and says so.
+- **No semantic understanding.** A novel metaphor will be handled less well than
+  a literal request. Adding a model for this would cost determinism and the
+  guarantees above — see [`docs/decisions/0003-no-llm-in-the-core.md`](./docs/decisions/0003-no-llm-in-the-core.md).
 
-## Tests
+---
+
+## Testing
 
 ```bash
-npm test        # 37 tests: engine behaviour, knowledge integrity, traceability, tool modes
-node src/cli/promptnexus.mjs demo   # six representative cases end-to-end
+npm test
+# tests 37
+# pass 37
+# fail 0
 ```
 
-The suite asserts the guarantees above: determinism, ≤3 questions, twelve scored dimensions, labelled assumptions, injection handling, media prompts staying compact, every technique rendering without throwing, and every category mapping to a real section recipe.
+Covers engine behaviour on real inputs, determinism, capability honesty,
+injection defence, question limits, media-prompt compactness, knowledge-table
+integrity, and full traceability of every generated line. CI additionally
+asserts zero dependencies, engine purity, and that the build output exists.
+
+---
 
 ## Contributing
 
-The knowledge layers are pure data — extending them needs no engine changes:
+Read [`CONTRIBUTING.md`](./CONTRIBUTING.md). The short version: zero
+dependencies, `src/core` stays pure, one implementation per behaviour, and the
+honesty rules are not negotiable.
 
-- **Add a task category** → `src/core/knowledge/taxonomy.mjs` (id, signals, role, must-list, default techniques) and map it in `CATEGORY_RECIPE`.
-- **Add a model profile** → `src/core/knowledge/targets.mjs`. State the assumption in `notes`.
-- **Add a technique** → `src/core/knowledge/techniques.mjs` (family, cost, risk, applicability, renderer).
-- **Add a section** → `src/core/templates/templates.mjs`, then reference it from a recipe.
-
-Run `npm test` before opening a PR — the knowledge-integrity tests will catch a missing builder or an unknown capability gate.
+- [Architecture](./docs/architecture.md)
+- [Decision log](./docs/decisions/)
+- [Deployment runbook](./docs/runbooks/deploy.md)
+- [Security policy](./SECURITY.md)
 
 ## License
 
-MIT.
+[MIT](./LICENSE)

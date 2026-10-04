@@ -11,6 +11,7 @@
 export { generate, explain, errorResult } from './pipeline/engine.mjs';
 export { analyzePrompt, compressPrompt, translatePrompt, testPrompt, comparePrompts, splitPromptPair } from './pipeline/promptanalysis.mjs';
 export { detectModes, MODES } from './pipeline/modes.mjs';
+export { evaluate, metricsFor, METRIC_LABELS } from './pipeline/evaluate.mjs';
 export { classifyCategories, detectTarget, detectIntent, assessComplexity } from './pipeline/classify.mjs';
 export { extractSpec } from './pipeline/extract.mjs';
 export { selectTechniques, deriveFlags, deriveStrategyPayload } from './pipeline/strategy.mjs';

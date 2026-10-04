@@ -1,0 +1,16 @@
+# Default owner for everything
+*       @sarfarajmulla-data
+
+# The engine is the product: changes here need the closest review.
+/src/core/                @sarfarajmulla-data
+/tests/                   @sarfarajmulla-data
+
+# Contract surfaces — a change here affects every consumer.
+/api/                     @sarfarajmulla-data
+/vercel.json              @sarfarajmulla-data
+/package.json             @sarfarajmulla-data
+
+# Security-relevant
+/SECURITY.md              @sarfarajmulla-data
+/.github/workflows/       @sarfarajmulla-data
+/.env.example             @sarfarajmulla-data

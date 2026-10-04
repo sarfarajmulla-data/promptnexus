@@ -8,14 +8,15 @@
   "main": "./src/core/index.mjs",
   "exports": {
     ".": "./src/core/index.mjs",
-    "./engine": "./src/core/engine.mjs",
-    "./server": "./src/server/server.mjs"
+    "./engine": "./src/core/pipeline/engine.mjs"
   },
   "bin": { "promptnexus": "./src/cli/promptnexus.mjs" },
-  "files": ["src", "docs", "README.md", "LICENSE"],
+  "files": ["src", "public", "api", "docs", "README.md", "LICENSE"],
   "scripts": {
-    "start": "node src/server/server.mjs",
     "dev": "node src/server/server.mjs",
+    "start": "node src/server/server.mjs",
+    "build": "node scripts/build-public-engine.mjs",
+    "vercel-build": "node scripts/build-public-engine.mjs",
     "test": "node --test tests/*.test.mjs",
     "cli": "node src/cli/promptnexus.mjs",
     "demo": "node src/cli/promptnexus.mjs demo"

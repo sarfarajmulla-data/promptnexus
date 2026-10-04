@@ -177,3 +177,27 @@ export function listOut(items, { conjunction = 'and', oxford = false } = {}) {
   const sep = oxford ? `, ${conjunction} ` : ` ${conjunction} `;
   return a.length === 2 ? `${head} ${conjunction} ${tail}` : head + sep + tail;
 }
+
+/**
+ * Does this text describe a task, or is it only asking for a payload?
+ *
+ * Used by the extractor and the goal builder. Deliberately conservative: when in
+ * doubt it says no, because the caller's fallback (the classified task class) is
+ * always safe, whereas trusting residue can put attacker-controlled text into
+ * the objective of the generated prompt.
+ *
+ * This is a structural test, not a phrase blocklist: enumerating attack strings
+ * is a losing game, so the rule is about what the residue *is*, not what it says.
+ */
+export function looksLikeTask(text) {
+  const t = String(text || '')
+    .replace(/^\s*(?:improve|rewrite|expand|compress|fix|optimise|optimize)\s+this\s+prompt\s*:?\s*/i, '')
+    .trim();
+
+  if (t.replace(/[\s.,;:\-—'"“”()]/g, '').length < 12) return false;
+  if (/^\s*(?:now\s+|then\s+|please\s+)?(?:output|print|say|reply|respond|repeat|echo|return|ignore|forget|disregard|pretend|act\s+as|behave)\b/i.test(t)) return false;
+  if (/\byou\s+are\s+now\b/i.test(t)) return false;
+  if (/["'“”][A-Z0-9_]{3,}["'“”]/.test(t)) return false;   // quoted payload token
+  if (!/[a-z]{3}/i.test(t)) return false;
+  return true;
+}
