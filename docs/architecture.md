@@ -113,17 +113,30 @@ Modes are detected from the request and change the shape of the whole response: 
 - **Compare** scores both prompts across nine dimensions and explains the gap, including safeguards each one has that the other lacks.
 - **Workflow** splits a task into sequential prompts with an explicit hand-off contract, used when one prompt would have to hold too many incompatible jobs.
 
-## 9. Testing strategy
+## 9. Traceability (provenance)
+
+Every line in a generated prompt is registered against its origin as it is built:
+
+- `buildSections` tags each section with its builder id and the section library that produced it (`sourceFor`).
+- `selectTechniques` registers each rendered technique line in `ctx.techniqueLines` (line → technique).
+- `construct` snapshots the section lines *before* `adversarialReview` runs; any line that appears only after the rebuild is attributed to a repair.
+- `buildProvenance` then walks the final section list and emits, per line, `{ text, source, detail }`.
+
+Media prompts get clause-level provenance instead (`buildMediaProvenance`), separating what the user actually described from defaults the engine supplied because nothing was stated.
+
+Because rendering always goes through `renderPromptFrom(ctx)` — the section list is the single source of truth — the prompt text and the section list cannot drift apart, and a test asserts that every line in the prompt appears in the provenance report. This is the mechanism that makes the system auditable rather than merely plausible: **no component can add a line to the prompt without a source being recorded for it.**
+
+## 10. Testing strategy
 
 `npm test` runs three suites:
 
 - **engine.test.mjs** — fourteen realistic inputs, determinism (byte-identical repeat runs), capability honesty, unknown-target degradation, injection defence, minimal mode, assumptions being labelled, ≤3 questions, answers feeding back, workflow only when warranted, media compactness.
 - **knowledge.test.mjs** — taxonomy uniqueness and completeness, every category mapping to a recipe with real builders, target honesty (`verified: false` for every non-generic profile with stated assumptions), `resolveTarget` never throwing, technique contract validity, and every technique rendering against a full realistic context without throwing.
-- **tools.test.mjs** — analysis, compression fidelity (never introducing a word that wasn't there), failure simulation, comparison verdicts, translation, improve score deltas, and hostile pasted content being treated as data.
+- **tools.test.mjs** — analysis, compression fidelity (never introducing a word that wasn't there), failure simulation, comparison verdicts, translation, improve score deltas, hostile pasted content being treated as data, and full line-level traceability of every generated prompt.
 
 The knowledge-integrity tests are the guardrail for contributors: adding a category without a recipe, a technique with an unknown capability gate, or a target claiming verified capabilities all fail the build.
 
-## 10. Extension points
+## 11. Extension points
 
 | Want to… | Change | Nothing else needed |
 |---|---|---|

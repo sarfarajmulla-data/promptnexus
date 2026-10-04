@@ -19,6 +19,7 @@ import { detectModes } from './modes.mjs';
 import { assessMissingInformation } from './clarify.mjs';
 import { deriveFlags, deriveStrategyPayload, selectTechniques, COST_BUDGET } from './strategy.mjs';
 import { buildPrompt, buildMediaPrompt, buildHandoff } from './build.mjs';
+import { renderPrompt } from './render.mjs';
 import { adversarialReview, quarantined } from './redteam.mjs';
 import { qualityControl, scorePrompt } from './score.mjs';
 import { analyzePrompt, compressPrompt, translatePrompt, testPrompt, comparePrompts, splitPromptPair } from './promptanalysis.mjs';
@@ -126,12 +127,19 @@ function prepareStrategy(ctx) {
 
 /** Build, review, repair, rebuild, verify. */
 function construct(ctx) {
+  // Single source of truth for rendering: the section list. Any later change
+  // (repairs, de-duplication) re-renders from it, so prompt and sections agree.
+  ctx.renderPrompt = () => renderPromptFrom(ctx);
   let built = buildPrompt(ctx);
   ctx.sections = built.sections;
   ctx.template = built.template;
   ctx.prompt = built.prompt;
   ctx.title = built.title;
   ctx.tokens = estimateTokens(ctx.prompt);
+
+  // Snapshot the first construction: lines that appear only after the red-team
+  // pass were added as repairs and are attributed as such in provenance.
+  const preRepair = new Set(ctx.sections.flatMap((s) => s.lines));
 
   const review = adversarialReview(ctx);
   ctx.review = review;
@@ -143,6 +151,7 @@ function construct(ctx) {
     ctx.prompt = built.prompt;
   }
   ctx.tokens = estimateTokens(ctx.prompt);
+  ctx.repairLines = new Set(ctx.sections.flatMap((s) => s.lines).filter((l) => !preRepair.has(l)));
 
   const tally = qualityControl(ctx);
   ctx.qualityChecks = tally;
@@ -157,12 +166,108 @@ function construct(ctx) {
   return ctx;
 }
 
+
+/**
+ * Line-level traceability. For every line in the final prompt, say where it came
+ * from: a specific technique, a red-team repair, the request extractor, or the
+ * archetype's section library. Nothing in the final prompt can lack a source —
+ * which is the whole reason the output is reproducible and auditable.
+ */
+function buildProvenance(ctx) {
+  if (ctx.flags?.media && ctx.media) return buildMediaProvenance(ctx);
+  const techniqueLines = ctx.techniqueLines || new Map();
+  return (ctx.sections || []).map((s) => ({
+    section: s.title,
+    lines: s.lines.length,
+    sectionSources: s.from || [],
+    trace: s.lines.map((line) => {
+      if (ctx.repairLines && ctx.repairLines.has(line)) {
+        const repair = (ctx.review?.repairs || []).find((r) => matchesRepair(r, line));
+        return { text: line, source: 'adversarial review (repair)', detail: repair || 'failure-mode safeguard added before delivery' };
+      }
+      const t = techniqueLines.get(line);
+      if (t) return { text: line, source: `technique: ${t.label}`, detail: t.description };
+      const from = (s.from || [])[0] || 'section library';
+      return { text: line, source: from, detail: detailFor(from) };
+    }),
+  }));
+}
+
+
+/**
+ * Media prompts are a single descriptive block rather than sections, so their
+ * provenance is reported per clause: which parts came from the user's own
+ * description and which were supplied as defaults because nothing was stated.
+ */
+function buildMediaProvenance(ctx) {
+  const m = ctx.media;
+  const raw = (ctx.spec?.media?.raw || '').toLowerCase();
+  const assumed = new Set((m.assumed || []).map((a) => a.split('→')[0].trim().toLowerCase()));
+  const cue = (label, key, value) => {
+    const defaulted = assumed.has(key) || !value;
+    return {
+      text: `${label}: ${value || '(engine default)'}`,
+      source: defaulted ? 'engine default (you did not specify)' : 'media cue bank (matched your description)',
+      detail: defaulted
+        ? `Nothing about ${key} was stated, so the engine supplied the most common choice. Change it if it is wrong.`
+        : `Recognised from your own wording ("${key}").`,
+    };
+  };
+  return [{
+    section: 'PROMPT (media)',
+    lines: 3 + (m.parameters?.length || 0) + (m.negatives?.length ? 1 : 0),
+    sectionSources: ['media-prompt builder'],
+    trace: [
+      { text: m.prompt, source: 'your words, arranged by the composition stack', detail: 'Subject and action come from you; the stack orders them the way image/video models weight them.' },
+      cue('Lighting', 'lighting', (m.prompt.match(/lit by ([^,]+)/) || [])[1]),
+      cue('Style', 'medium', (m.prompt.match(/(?:^|, )([a-z ]+) style/) || [])[1]),
+      ...(m.parameters || []).map((p) => ({ text: p, source: 'parameter rule (model target)', detail: 'Chosen from the target model\'s accepted parameters, not invented.' })),
+      ...(m.negatives?.length ? [{ text: `Negative constraints: ${m.negatives.join(', ')}`, source: 'quality defaults + your exclusions', detail: 'A standard artefact-prevention list, plus anything you asked to exclude.' }] : []),
+    ],
+  }];
+}
+
+function matchesRepair(repair, line) {
+  const key = repair.toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 5);
+  const l = line.toLowerCase();
+  return key.some((w) => l.includes(w));
+}
+
+function detailFor(from) {
+  if (/extractor/.test(from)) return 'your own words turned into structure — nothing invented';
+  if (/taxonomy/.test(from)) return 'the default expertise for this task class';
+  if (/recipe/.test(from)) return 'the section library for this archetype';
+  if (/output-format/.test(from)) return 'chosen so the shape of the answer is fixed, not left to chance';
+  if (/edge-case/.test(from)) return 'generated from known failure patterns of this task class';
+  if (/conflict/.test(from)) return 'your brief contained tension; this resolves it by priority';
+  if (/media-prompt/.test(from)) return 'the composition stack image/video models actually condition on';
+  if (/rubric/.test(from)) return 'shared evaluation criteria, so "good" is defined rather than assumed';
+  if (/capability/.test(from)) return 'checked against the target model profile before writing';
+  return 'engine default';
+}
+
+
+/**
+ * Render the current section list — the only way linguistic prompt text is
+ * produced. Media prompts are rendered by their own builder (they are a single
+ * descriptive block, not sections) and are left untouched here.
+ */
+function renderPromptFrom(ctx) {
+  if (ctx.flags?.media) return ctx.prompt;
+  return renderPrompt(ctx.sections, { target: ctx.target, title: ctx.title });
+}
+
 /* ───────────────────────── optimisation ───────────────────────── */
 
+/**
+ * Optimisation pass: collapse near-duplicate lines, then re-render so the
+ * prompt text and the section list can never drift apart.
+ */
 function tidyPrompt(ctx) {
   for (const s of ctx.sections) {
     s.lines = dedupeLines(s.lines.join('\n')).split('\n').filter(Boolean);
   }
+  ctx.prompt = ctx.renderPrompt ? ctx.renderPrompt() : ctx.prompt;
   return ctx;
 }
 
@@ -356,6 +461,7 @@ function composeResult(ctx, options) {
     variants: Object.values(variants),
     workflow,
     handoff: ctx.handoff,
+    provenance: buildProvenance(ctx),
     warnings,
 
     limitations: [

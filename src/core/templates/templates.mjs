@@ -345,7 +345,12 @@ export function recipeIdFor(categoryId, flags = {}) {
 
 /**
  * Build the numbered section list for a prompt.
- * @returns {Array<{title:string, lines:string[]}>}
+ *
+ * Each section carries its builder `id` and, where applicable, the techniques
+ * whose rendered instructions landed inside it. That metadata is what makes
+ * provenance reporting possible — nothing is added to the prompt text itself.
+ *
+ * @returns {Array<{id:string, title:string, lines:string[], from:string[]}>}
  */
 export function buildSections(ctx) {
   const ids = recipeFor(ctx.primary.id, ctx.flags);
@@ -357,9 +362,48 @@ export function buildSections(ctx) {
     const builder = SECTIONS[id];
     if (!builder) continue;
     const s = builder(ctx);
-    if (s) out.push(s);
+    if (s) out.push({ id, from: sourceFor(id, ctx), ...s });
   }
   return out;
+}
+
+/** Which part of the engine is responsible for each section. */
+function sourceFor(id, ctx) {
+  const selected = ctx.selected || [];
+  switch (id) {
+    case 'process': return contributors(sourceFamilies(selected, ['process', 'reasoning']), 'technique');
+    case 'verification': return contributors(sourceFamilies(selected, ['evaluation']).filter((t) => t.id !== 'rubric'), 'technique');
+    case 'quality': return ['rubric-based evaluation (checks: content quality)', 'extracted brief (the task’s own standard)'];
+    case 'researchSpec': case 'academicSpec': case 'teachingSpec': case 'codeSpec': case 'debugSpec':
+    case 'buildSpec': case 'decisionSpec': case 'commsSpec': case 'highStakes': case 'metaSpec':
+    case 'agentSpec': case 'runbook': case 'transformSpec':
+      return ['archetype recipe (domain section library)', 'extracted brief (audience, level, constraints)'];
+    case 'mediaSpec': case 'mediaNegative': case 'mediaControls': case 'mediaNotes':
+      return ['media-prompt builder (composition stack for image/video models)'];
+    case 'rubricSpec': return ['marking-rubric structure (exam archetype)'];
+    case 'failure': return ['extraction (unknowns)', 'adversarial review (missing-information rule)'];
+    case 'finalRules': return ctx.repairs?.length
+      ? ['adversarial review — repaired failure modes', 'always-on output discipline rules']
+      : ['always-on output discipline rules'];
+    case 'edgeCases': return ['edge-case generator (per task class)'];
+    case 'constraints': case 'requirements': case 'objective': case 'context': case 'inputs': case 'mission':
+      return ['request extractor (your own words, structured)'];
+    case 'priorities': return ctx.spec?.conflicts?.length
+      ? ['conflict detector (tension found in your brief)']
+      : ['static priority order'];
+    case 'role': return ['taxonomy default role for this task class', 'capability gating against the target profile'];
+    case 'output': return ['output-format engine (archetype default for this task class)'];
+    default: return ['section library'];
+  }
+}
+
+function sourceFamilies(selected, families) {
+  return selected.filter((t) => families.includes(t.family));
+}
+
+function contributors(techniques, kind) {
+  if (!techniques.length) return [`${kind}: none required for this task`];
+  return techniques.map((t) => `${kind}: ${t.label}${t.id === 'rubric' ? '' : ''}`);
 }
 
 /** Distinct section titles across all recipes — used by the test-suite. */

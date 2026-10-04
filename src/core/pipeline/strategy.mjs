@@ -123,9 +123,15 @@ export function selectTechniques(ctx) {
   }
 
   // Render instruction text with the fully-populated context.
+  // Each rendered line is registered against the technique that produced it, so
+  // the final prompt can be traced line by line (see provenance.mjs).
+  ctx.techniqueLines = ctx.techniqueLines || new Map();
   return chosen.map((t) => {
     let rendered = [];
     try { rendered = t.render(ctx) || []; } catch { rendered = []; }
+    for (const line of rendered) {
+      if (line && !ctx.techniqueLines.has(line)) ctx.techniqueLines.set(line, t);
+    }
     return { ...t, rendered: rendered.filter(Boolean), selected: true };
   });
 }

@@ -64,6 +64,7 @@ ${c(C.bold, 'FLAGS')}
   --target <id>     Optimise for a specific model (see: promptnexus targets)
   --json            Output the full result object as JSON
   --minimal         Print the prompt only — nothing else
+  --why             Show where every line of the prompt came from
   --advanced        Maximum-quality build (adds verification pass)
   --workflow        Force a multi-prompt workflow
   --out <file>      Write the prompt to a file
@@ -73,6 +74,58 @@ ${c(C.bold, 'PIPES')}
   cat notes.txt | promptnexus improve --minimal > better-prompt.md
   echo "help me plan a trip to japan" | promptnexus --json | jq .score.total
 `);
+}
+
+
+/**
+ * `--why` — show where every line of the generated prompt came from.
+ * This is the difference between "the engine wrote something" and
+ * "the engine can account for every line it wrote".
+ */
+function printProvenance(result) {
+  if (!result.provenance?.length) return;
+  console.log(c(C.bold, '\n🔍 WHERE EVERY LINE CAME FROM\n'));
+  for (const sec of result.provenance) {
+    console.log(c(C.purple, `  ${sec.section}`) + c(C.dim, `   ${sec.lines} line${sec.lines === 1 ? '' : 's'}`));
+    for (const t of sec.trace) {
+      const colour = /technique/.test(t.source) ? C.cyan
+        : /repair/.test(t.source) ? C.yellow
+          : /extractor/.test(t.source) ? C.green : C.grey;
+      console.log(`    ${c(colour, '[' + shortSource(t.source) + ']')} ${c(C.grey, truncate(t.text, 74))}`);
+    }
+    console.log('');
+  }
+  const counts = {};
+  for (const sec of result.provenance) for (const t of sec.trace) {
+    const k = t.source.split(':')[0];
+    counts[k] = (counts[k] || 0) + 1;
+  }
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  console.log(c(C.bold, '  SUMMARY'));
+  for (const [k, v] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
+    const bar = '█'.repeat(Math.max(1, Math.round((v / total) * 28)));
+    console.log(`    ${c(C.grey, k.padEnd(26))} ${c(C.cyan, bar)} ${v} (${Math.round((v / total) * 100)}%)`);
+  }
+  console.log(c(C.dim, '\n  Every line has a source. Nothing in this prompt was invented without a rule behind it.'));
+}
+
+function shortSource(s) {
+  if (/technique: (.+)/.test(s)) return 'technique: ' + s.replace(/^technique: /, '').slice(0, 20);
+  if (/repair/.test(s)) return 'red-team repair';
+  if (/extractor/.test(s)) return 'your words';
+  if (/taxonomy/.test(s)) return 'task class';
+  if (/output-format/.test(s)) return 'format rule';
+  if (/edge-case/.test(s)) return 'edge cases';
+  if (/conflict/.test(s)) return 'conflict rule';
+  if (/rubric/.test(s)) return 'quality bar';
+  if (/capability/.test(s)) return 'capability gate';
+  if (/recipe/.test(s)) return 'archetype';
+  return s.slice(0, 22);
+}
+
+function truncate(s, n) {
+  const t = String(s).replace(/\s+/g, ' ').trim();
+  return t.length > n ? t.slice(0, n - 1) + '…' : t;
 }
 
 /* ───────────────────────── output helpers ───────────────────────── */
@@ -121,6 +174,7 @@ function printResult(result, flags) {
     out.push(c(C.dim, `  repairs applied before delivery: ${result.repairs.length}`));
   }
   console.log(out.join('\n'));
+  if (flags.why) printProvenance(result);
 
   if (flags.out) {
     import('node:fs').then((fs) => {

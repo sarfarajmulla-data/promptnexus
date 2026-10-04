@@ -84,7 +84,7 @@ export const TAXONOMY = [
   },
   {
     id: 'editing', label: 'Editing & proofreading', group: 'communication',
-    kw: ['edit', 'editing', 'proofread', 'grammar', 'typo', 'punctuation', 'spelling', 'style', 'clarity', 'redline'],
+    kw: ['edit', 'editing', 'proofread', 'proofreading', 'grammar', 'typo', 'typos', 'punctuation', 'spelling', 'clarity', 'redline', 'copyedit'],
     ph: ['check my grammar', 'proofread this', 'fix the writing', 'clean up this text'],
     role: 'copy editor and proofreader',
     must: ['source text', 'edit level (light/standard/heavy)', 'output form (clean text vs tracked changes)'],

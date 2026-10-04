@@ -96,6 +96,7 @@ const DOMAIN_OVERRIDES = [
   { id: 'debugging', re: /\b(?:(?:my|our|this|the|when i)\s+(?:[\w.'/-]+\s+){0,8}(?:throws?|crashes?|fails?|is broken|won'?t (?:run|start|build|compile|work)|isn'?t working|not working|keeps? (?:failing|crashing|timing out|breaking|erroring)|times? out|hangs|freezes|gives? (?:me )?an? error|errors? out|stopped working)|(?:no idea|don'?t know|can'?t figure out|not sure)\s+why\b)/i, why: 'a first-person failure symptom is described' },
   { id: 'research', re: /\b(literature review|systematic review|research question|evidence base|state of the art)\b/i, why: 'a research deliverable is named' },
   { id: 'coding', re: /\b(python|javascript|typescript|java|c\+\+|c#|csharp|golang|rust|ruby|php|kotlin|swift|dart|sql|react|vue|angular|svelte|node|express|django|flask|fastapi|laravel|spring|rails|tailwind|docker|kubernetes|terraform|regex|endpoint)\b/i, why: 'a programming language, framework or programming construct is named' },
+  { id: 'image-generation', re: /\b(?:make|create|design|generate|draw|render)\b[^.\n]{0,45}\b(?:image|picture|photo|poster|logo|thumbnail|wallpaper|banner|illustration|artwork|mockup)\b|\b(?:poster|logo|thumbnail|wallpaper|banner)\s+(?:for|of)\b|\b(?:image|picture|photo)s? of\b/i, why: 'the request is to produce a visual artefact' },
   { id: 'website', re: /\b(?:build|create|make|design|redesign)\b[^.\n]{0,45}\b(?:website|web site|web app|web application|landing page|full[- ]stack|saas|dashboard|portfolio site)\b/i, why: 'the request is to build a web product' },
 ];
 

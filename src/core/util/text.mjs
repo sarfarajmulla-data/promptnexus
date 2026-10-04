@@ -101,11 +101,16 @@ export function similarity(a, b) {
   return inter / (A.size + B.size - inter);
 }
 
-/** Deduplicate near-identical lines while preserving order. */
+/**
+ * Deduplicate near-identical lines while preserving order.
+ * Splits on newlines only — it must not normalise typography, because callers
+ * use this on already-rendered prompt text where em dashes and arrows matter.
+ */
 export function dedupeLines(text, threshold = 0.86) {
   const seen = [];
   const kept = [];
-  for (const l of lines(text)) {
+  const raw = String(text ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+  for (const l of raw) {
     if (seen.some((s) => similarity(s, l) >= threshold)) continue;
     seen.push(l);
     kept.push(l);

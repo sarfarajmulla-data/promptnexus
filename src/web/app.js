@@ -178,6 +178,29 @@ function render(r) {
     ${(r.assumptions || []).map((a) => `<div class="kv"><div class="k">${esc(a.field)}</div><div class="v">${esc(a.assumption)}</div></div>`).join('') || '<div class="muted small">No assumptions were needed.</div>'}
     ${(r.explanation || []).map((p) => `<details><summary>${esc(p.heading)}</summary><ul class="tight">${p.body.map((b) => `<li>${esc(b)}</li>`).join('')}</ul></details>`).join('')}`;
 
+  // provenance — where every line came from
+  const prov = r.provenance || [];
+  const counts = {};
+  for (const sec of prov) for (const t of sec.trace || []) {
+    const k = sourceKind(t.source);
+    counts[k] = (counts[k] || 0) + 1;
+  }
+  const totalLines = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+  $('#provSummary').innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, v]) => `
+    <div style="margin-bottom:8px">
+      <div class="row between"><span class="small">${esc(k)}</span><span class="small dim">${v} line${v === 1 ? '' : 's'} · ${Math.round((v / totalLines) * 100)}%</span></div>
+      <div class="bar"><i style="width:${(v / totalLines) * 100}%"></i></div>
+    </div>`).join('');
+  $('#provenance').innerHTML = prov.map((sec) => `
+    <details><summary>${esc(sec.section)} <span class="small dim">· ${sec.lines} line${sec.lines === 1 ? '' : 's'}</span></summary>
+      <table style="margin-top:8px"><tbody>
+      ${sec.trace.map((t) => `<tr>
+        <td style="width:150px"><span class="tag ${sourceTag(t.source)}">${esc(t.source.replace(/^technique: /, ''))}</span></td>
+        <td><div class="small">${esc(t.text)}</div><div class="small dim">${esc(t.detail || '')}</div></td>
+      </tr>`).join('')}
+      </tbody></table>
+    </details>`).join('');
+
   // quality
   const total = r.score?.total ?? 0;
   const hue = total >= 85 ? 'var(--ok)' : total >= 72 ? 'var(--acc2)' : total >= 58 ? 'var(--warn)' : 'var(--bad)';
@@ -224,6 +247,28 @@ function render(r) {
 }
 
 function tag(t, cls) { return `<span class="tag ${cls}">${esc(t)}</span>`; }
+
+function sourceKind(s) {
+  if (/^technique:/.test(s)) return 'technique (chosen for this task)';
+  if (/repair/.test(s)) return 'red-team repair (added after self-review)';
+  if (/extractor/.test(s)) return 'your own words (structured, nothing invented)';
+  if (/taxonomy/.test(s)) return 'task-class default (role for this kind of work)';
+  if (/archetype|recipe/.test(s)) return 'archetype section library (domain craft)';
+  if (/rubric|quality/.test(s)) return 'quality bar (shared evaluation criteria)';
+  if (/output-format/.test(s)) return 'output-format rule';
+  if (/edge-case/.test(s)) return 'edge-case rule';
+  if (/conflict/.test(s)) return 'conflict resolution rule';
+  if (/extraction|unknowns/.test(s)) return 'extraction rule';
+  if (/capability/.test(s)) return 'capability gate';
+  return 'engine default';
+}
+
+function sourceTag(s) {
+  if (/^technique:/.test(s)) return 'alt';
+  if (/repair/.test(s)) return 'warn';
+  if (/extractor/.test(s)) return 'ok';
+  return '';
+}
 
 window.pick = (qid, el) => {
   const input = document.querySelector(`#questions [data-qid="${qid}"]`);

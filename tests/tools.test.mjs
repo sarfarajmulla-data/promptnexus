@@ -133,3 +133,44 @@ test('very long input does not break the pipeline', () => {
   assert.ok(r.prompt.length > 200);
   assert.ok(r.score.total > 0);
 });
+
+test('every line of the final prompt has an accountable source', () => {
+  const r = architect('my node script that uploads a csv to postgres keeps timing out');
+  assert.ok(r.provenance?.length > 0, 'provenance must be reported');
+  const promptLines = r.prompt.split('\n').filter((l) => l.trim() && !/^#{1,6}\s/.test(l) && !/^\d+\.\s*$/.test(l));
+  const traced = r.provenance.flatMap((s) => s.trace.map((t) => t.text));
+  for (const line of traced) {
+    assert.ok(r.prompt.includes(line), `provenance references a line absent from the prompt: ${line.slice(0, 60)}`);
+  }
+  for (const sec of r.provenance) {
+    assert.ok(sec.section && sec.trace.length === sec.lines, 'section line counts must match');
+    for (const t of sec.trace) {
+      assert.ok(t.text && t.source, 'every trace entry needs text and source');
+      assert.ok(!/undefined/.test(t.source), 'no undefined sources');
+      assert.ok(r.prompt.includes(t.text), 'trace text must exist in the prompt');
+    }
+  }
+  // Headings are structural; the rest must be accounted for.
+  const tracedSet = new Set(traced.map((t) => t.trim()));
+  const untraced = promptLines.filter((l) => !tracedSet.has(l.trim()));
+  assert.equal(untraced.length, 0, `untraceable lines: ${untraced.slice(0, 3).join(' | ')}`);
+});
+
+test('red-team repairs are attributed as repairs, not as normal construction', () => {
+  const r = architect('write something about my company');
+  const repairLines = r.provenance.flatMap((s) => s.trace).filter((t) => /repair/.test(t.source));
+  if (r.repairs.length) {
+    assert.ok(repairLines.length > 0, `repairs were made (${r.repairs.length}) but none attributed`);
+  }
+  for (const t of repairLines) assert.ok(t.detail, 'repair lines must explain what was fixed');
+});
+
+test('media prompts report clause-level provenance', () => {
+  const r = architect('a poster for the tech fest, neon cyberpunk style, instagram size');
+  assert.ok(r.provenance?.length === 1, 'media prompts produce a single prompt block');
+  const sources = r.provenance[0].trace.map((t) => t.source);
+  assert.ok(sources.some((s) => /your words/.test(s)), 'subject must be attributed to the user');
+  assert.ok(sources.some((s) => /cue bank/.test(s)), 'stated cues must be attributed to matching, not invention');
+  assert.ok(sources.some((s) => /parameter/.test(s)), 'parameters must be attributed to the target profile');
+  assert.ok(sources.some((s) => /defaults/.test(s)), 'unstated parts must be labelled as defaults');
+});

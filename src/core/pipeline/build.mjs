@@ -24,6 +24,10 @@ const STYLE_CUES = [
   [/\b(pixel art|8[- ]bit|16[- ]bit)\b/i, 'pixel art'],
   [/\b(comic|graphic novel|ink drawing|line art)\b/i, 'inked line art'],
   [/\b(isometric)\b/i, 'isometric'],
+  [/\b(cyberpunk|synthwave|vaporwave|retrowave|neon[- ]noir)\b/i, 'neon cyberpunk'],
+  [/\b(noir|film noir)\b/i, 'high-contrast noir'],
+  [/\b(retro|vintage|film grain|analogue|analog)\b/i, 'retro film emulation'],
+  [/\b(sticker|icon|badge|emblem)\b/i, 'flat emblem'],
 ];
 
 const LIGHT_CUES = [
