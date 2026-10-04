@@ -107,8 +107,15 @@ name when refinement is configured. A client can always tell which path ran.
 | `assumptions` | array | `[{ field, assumption }]` — labelled, never invented |
 | `openQuestions` | array | Max three, each with `options` and a `default` |
 | `failureModes` | array | `[{ id, label, severity, risk, mitigation, status }]` |
+| `injectionDefense` | object | `{ detected, vectors[], contained, note }` — what was stripped and what was kept |
+| `warnings` | array | Human-readable cautions. Empty is the normal case |
+| `limitations` | array | What this prompt cannot do. Always present |
 | `variants`, `workflow`, `handoff` | object/array | Present when the request warrants them |
+| `engine`, `version`, `mode` | string | Provenance of the response itself |
 | `explanation` | array | Only when `explain: true` |
+
+The response is **flat** — there is no `result` wrapper. A client reads `data.prompt`,
+not `data.result.prompt`. `meta` carries timing and environment detail and is safe to ignore.
 
 Additive fields are not a breaking change. Removing or renaming one is.
 
