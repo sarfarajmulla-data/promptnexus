@@ -1,0 +1,31 @@
+{
+  "name": "promptnexus",
+  "version": "1.0.0",
+  "description": "Universal AI Prompt Architect — turns messy human intent into optimised, model-aware, verified prompts. Zero dependencies, runs offline.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "main": "./src/core/index.mjs",
+  "exports": {
+    ".": "./src/core/index.mjs",
+    "./engine": "./src/core/engine.mjs",
+    "./server": "./src/server/server.mjs"
+  },
+  "bin": { "promptnexus": "./src/cli/promptnexus.mjs" },
+  "files": ["src", "docs", "README.md", "LICENSE"],
+  "scripts": {
+    "start": "node src/server/server.mjs",
+    "dev": "node src/server/server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "cli": "node src/cli/promptnexus.mjs",
+    "demo": "node src/cli/promptnexus.mjs demo"
+  },
+  "keywords": [
+    "prompt-engineering",
+    "meta-prompting",
+    "llm",
+    "ai",
+    "prompt-generator",
+    "agent-workflow"
+  ]
+}
