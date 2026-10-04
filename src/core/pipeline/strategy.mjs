@@ -13,7 +13,7 @@
 import { TECHNIQUES } from '../knowledge/techniques.mjs';
 import { CATEGORY_INDEX } from '../knowledge/taxonomy.mjs';
 import { can } from '../knowledge/targets.mjs';
-import { fold, unique } from '../util/text.mjs';
+import { unique } from '../util/text.mjs';
 
 /* ── evidence: user-text signals that make a technique specifically relevant ── */
 const EVIDENCE = {
@@ -63,7 +63,7 @@ const COST_BUDGET = { 1: 2, 2: 4, 3: 6, 4: 8, 5: 11 };
 
 /** Choose techniques and return them with rendered instruction text. */
 export function selectTechniques(ctx) {
-  const { analysis, spec, flags, target, complexity, modes } = ctx;
+  const { analysis, flags, target, complexity, modes } = ctx;
   const folded = analysis.categories.folded;
 
   let budget = COST_BUDGET[complexity.level] ?? 4;

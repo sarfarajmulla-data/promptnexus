@@ -11,7 +11,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { architect, toText, TARGETS, MODES, analyzePrompt, compressPrompt, testPrompt, comparePrompts, explain } from '../core/index.mjs';
+import { architect, toText, TARGETS, MODES, compressPrompt, testPrompt, comparePrompts, explain } from '../core/index.mjs';
 import { generate } from '../core/pipeline/engine.mjs';
 import { start } from '../server/server.mjs';
 

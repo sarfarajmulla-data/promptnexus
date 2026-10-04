@@ -15,7 +15,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 const MODE = process.argv.includes('--history') ? 'history'
   : process.argv.includes('--staged') ? 'staged'
@@ -57,7 +57,7 @@ const PLACEHOLDER = [
   /x{5,}/i,                      // xxxxx masking
   /your[-_]?(?:api[-_])?key/i,   // your-api-key
   /placeholder/i,
-  /example\.com/i,               // documentation hostnames
+  /(?:^|[/.@])example\.com(?:[/:]|$)/i,  // documentation hostnames, not example.com.evil.tld
   /^<[A-Z_]+>$/,                 // <YOUR_KEY>
   /^\$\{[A-Z_]+\}$/,            // ${PROVIDER_API_KEY}
   /^process\.env\./              // process.env.OPENAI_API_KEY
@@ -93,9 +93,12 @@ function scanTree() {
   for (const file of listFiles()) {
     if (SKIP.test(file)) continue;
     try {
-      if (statSync(file).size > 2_000_000) continue;
-      findings.push(...scanText(readFileSync(file, 'utf8'), file));
-    } catch { /* unreadable or deleted: skip */ }
+      // Read once and measure what was actually read: a stat-then-read window
+      // is a race, and the size check only exists to skip large binaries.
+      const buf = readFileSync(file);
+      if (buf.length > 2_000_000) continue;
+      findings.push(...scanText(buf.toString('utf8'), file));
+    } catch { /* unreadable, deleted, or binary: skip */ }
   }
   return findings;
 }

@@ -6,8 +6,8 @@
  * of it. No framework, no build step, no runtime dependency.
  */
 
-import { probe, generate, analyze, targets as fetchTargets, runtime } from './js/api.js';
-import { state, subscribe, update, updateSettings, updateDraft, savePrompt, deletePrompt, toggleFavourite, wipe, applyTheme } from './js/store.js';
+import { generate, analyze, targets as fetchTargets, runtime } from './js/api.js';
+import { state, update, updateSettings, updateDraft, savePrompt, deletePrompt, toggleFavourite, wipe, applyTheme } from './js/store.js';
 import { listbox, closeListbox, toast, openModal, closeModal, escapeHtml as esc, debounce, copyText } from './js/ui.js';
 import { initField, setFieldEnabled, setFieldState } from './js/field.js';
 
@@ -557,7 +557,6 @@ function backToComposer() {
 /* ── result actions ───────────────────────────────────────────────────── */
 
 async function handleResultAction(act) {
-  const r = current;
   switch (act) {
     case 'copy': return doCopy($('#promptOut').textContent);
     case 'edit': {

@@ -15,8 +15,6 @@
  * picks the smallest set that materially improves this task.
  */
 
-const S = (a = []) => (Array.isArray(a) ? a : [a]).filter(Boolean);
-
 export const TECHNIQUES = [
   /* ── structure ─────────────────────────────────────────────────────── */
   {

@@ -14,7 +14,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { architect, analyzePrompt, compressPrompt } from '../src/core/index.mjs';
+import { architect, comparePrompts, compressPrompt, splitPromptPair } from '../src/core/index.mjs';
 
 /** Run fn and return { ms, value }, failing loudly if it never returns. */
 function timed(fn) {
@@ -47,10 +47,20 @@ test('a 200 KB single line is handled in linear time', () => {
   assert.ok(ms < BUDGET_MS, `took ${ms.toFixed(0)} ms, budget ${BUDGET_MS} ms`);
 });
 
-test('compare mode survives two hostile prompts', () => {
-  const hostile = `prompt a\n${'\n'.repeat(8_000)}`;
-  const { ms, value } = timed(() => analyzePrompt(hostile, { action: 'compare', second: `prompt b\n${'\n'.repeat(8_000)}` }));
-  assert.ok(value, 'compare returns a result rather than throwing');
+test('a hostile blob does not hang the two-prompt splitter', () => {
+  // This is the function the blank-line ReDoS lived in, reached by the engine's
+  // compare mode. Pin it directly as well as through the public entry point.
+  const hostile = `prompt one here\n${'\n'.repeat(16_000)}`;
+  const { ms, value } = timed(() => splitPromptPair(hostile));
+  assert.equal(value.length, 2, 'still returns a pair');
+  assert.ok(ms < BUDGET_MS, `took ${ms.toFixed(0)} ms, budget ${BUDGET_MS} ms`);
+});
+
+test('compare survives two hostile prompts', () => {
+  const a = `prompt a\n${'\n'.repeat(8_000)}`;
+  const b = `prompt b\n${'\n'.repeat(8_000)}`;
+  const { ms, value } = timed(() => comparePrompts(a, b, { labelA: 'Prompt A', labelB: 'Prompt B' }));
+  assert.ok(value.verdict, 'compare returns a verdict rather than throwing');
   assert.ok(ms < BUDGET_MS, `took ${ms.toFixed(0)} ms, budget ${BUDGET_MS} ms`);
 });
 

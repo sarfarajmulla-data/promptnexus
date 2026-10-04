@@ -8,7 +8,7 @@
  */
 
 import http from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -62,41 +62,52 @@ async function invokeApi(route, req, res) {
   await handler(req, res);
 }
 
+/** Read a file, or resolve the path to read instead. Returns null when there is nothing to serve. */
+async function resolveBody(rel) {
+  const target = path.join(PUBLIC, rel);
+  const resolved = path.resolve(target);
+  // Guard against traversal, including the sibling-directory case that a plain
+  // `startsWith(PUBLIC)` would let through (e.g. a directory named `public-old`).
+  if (resolved !== PUBLIC && !resolved.startsWith(PUBLIC + path.sep)) return null;
+
+  try {
+    return { file: target, body: await readFile(target) };
+  } catch (err) {
+    // A directory request (or `/`) serves its index.html.
+    if (err.code === 'EISDIR') {
+      const index = path.join(target, 'index.html');
+      try { return { file: index, body: await readFile(index) }; } catch { return null; }
+    }
+    // SPA fallback: an extensionless path is a route, so render the shell.
+    if (!path.extname(rel)) {
+      const shell = path.join(PUBLIC, 'index.html');
+      try { return { file: shell, body: await readFile(shell) }; } catch { return null; }
+    }
+    return null;
+  }
+}
+
 async function serveStatic(pathname, req, res) {
   let rel = decodeURIComponent(pathname);
   if (rel === '/' || rel === '') rel = '/index.html';
 
-  // SPA fallback: extensionless paths render the shell.
-  let file = path.join(PUBLIC, rel);
-  if (!path.resolve(file).startsWith(PUBLIC)) {
-    res.writeHead(403).end('Forbidden');
+  // One read, one decision: no stat-then-read window between the check and the use.
+  const found = await resolveBody(rel);
+  if (!found) {
+    res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found');
     return;
   }
 
-  try {
-    const info = await stat(file);
-    if (info.isDirectory()) file = path.join(file, 'index.html');
-  } catch {
-    if (path.extname(rel)) {
-      res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found');
-      return;
-    }
-    file = path.join(PUBLIC, 'index.html');
-  }
+  const ext = path.extname(found.file);
+  const immutable = /\.(mjs|css|js|woff2|png|jpg|webp|svg)$/.test(found.file)
+    && /\/engine\/|\/js\/|\/assets\//.test(found.file);
 
-  try {
-    const body = await readFile(file);
-    const ext = path.extname(file);
-    const immutable = /\.(mjs|css|js|woff2|png|jpg|webp|svg)$/.test(file) && /\/engine\/|\/js\/|\/assets\//.test(file);
-    res.writeHead(200, {
-      'content-type': MIME[ext] || 'application/octet-stream',
-      'cache-control': immutable ? 'public, max-age=3600' : 'no-cache',
-      'x-content-type-options': 'nosniff',
-    });
-    res.end(body);
-  } catch {
-    res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found');
-  }
+  res.writeHead(200, {
+    'content-type': MIME[ext] || 'application/octet-stream',
+    'cache-control': immutable ? 'public, max-age=3600' : 'no-cache',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(found.body);
 }
 
 /**

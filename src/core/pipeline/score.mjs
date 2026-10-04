@@ -47,7 +47,7 @@ export function qualityControl(ctx) {
       ? (ctx.media?.negatives?.length ? `${ctx.media.negatives.length} explicit exclusions and ${ctx.media?.parameters?.length || 0} parameter controls supplied.` : 'No exclusions supplied — output artefacts will need manual retries.')
       : `${robustSignals(ctx)} of 5 robustness safeguards present (delimiters, injection defence, edge cases, missing-info rule, uncertainty marking).`);
 
-  const [lo, hi] = IDEAL_TOKENS[ctx.complexity.level] || IDEAL_TOKENS[2];
+  const [, hi] = IDEAL_TOKENS[ctx.complexity.level] || IDEAL_TOKENS[2];
   add('efficiency', 'Efficiency', tokens <= hi * 1.35,
     tokens > hi * 1.35 ? `~${tokens} tokens is long for a level-${ctx.complexity.level} task (target ≤ ${hi}).` : `~${tokens} tokens for a level-${ctx.complexity.level} task — proportionate.`);
 
