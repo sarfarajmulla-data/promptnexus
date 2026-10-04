@@ -1,0 +1,45 @@
+# Release notes configuration.
+# Controls how GitHub groups pull requests when generating a release.
+# See docs/decisions/ for why the project keeps a written decision log.
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+    authors:
+      - dependabot[bot]
+
+  categories:
+    - title: Breaking changes
+      labels:
+        - breaking
+        - semver-major
+
+    - title: Features
+      labels:
+        - feature
+        - enhancement
+
+    - title: Fixes
+      labels:
+        - bug
+        - fix
+
+    - title: Security
+      labels:
+        - security
+
+    - title: Documentation
+      labels:
+        - documentation
+        - docs
+
+    - title: Tests and CI
+      labels:
+        - tests
+        - ci
+
+    - title: Other changes
+      labels:
+        - '*'

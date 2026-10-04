@@ -49,6 +49,9 @@ jobs:
             console.log('Zero dependencies ✓');
           "
 
+      - name: Secret scan
+        run: npm run scan && npm run scan:history
+
       - name: Test
         run: npm test
 

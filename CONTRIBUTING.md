@@ -36,12 +36,43 @@ not a trade-off:
 ```bash
 git clone https://github.com/sarfarajmulla-data/promptnexus.git
 cd promptnexus
-npm test        # 37 tests, no install step required
+npm run hooks   # install git hooks (also runs automatically on npm install)
+npm test        # 56 tests, no install step required
 npm start       # http://localhost:4317
 ```
 
+### Git hooks
+
+`core.hooksPath` points at `.githooks/`, so the hooks are version-controlled and
+updating them is a normal commit. The pre-commit hook runs in well under a second
+and checks three things:
+
+1. **Secrets** — `node scripts/scan-secrets.mjs --staged` looks for credentials in
+   the staged diff (a full-history scan is available as `npm run scan:history`).
+2. **Syntax** — every staged JavaScript file is parsed before it can reach CI.
+3. **Build output** — refuses to commit `public/engine/` (generated) or any `.env` file.
+
+It deliberately does **not** run the test suite: a slow hook is a disabled hook, and
+CI runs the full set on every pull request.
+
 There is nothing to install. If `npm install` is creating a `node_modules`
 directory, something has gone wrong.
+
+## Documentation
+
+| Document | Read it when |
+|---|---|
+| [`docs/system-design.md`](./docs/system-design.md) | You need to know what is in scope — and what is explicitly out |
+| [`docs/architecture.md`](./docs/architecture.md) | You are changing the pipeline |
+| [`docs/decisions/`](./docs/decisions/) | Before proposing a structural change. The interesting entries are the ones that say no |
+| [`docs/testing.md`](./docs/testing.md) | Before writing a test |
+| [`docs/api-conventions.md`](./docs/api-conventions.md) | Before touching `api/` |
+| [`docs/security/threat-model.md`](./docs/security/threat-model.md) | Before touching injection handling or anything that reads the environment |
+| [`docs/README.md`](./docs/README.md) | For the full index |
+
+A change that alters behaviour must update the matching document **in the same
+pull request**. A document that lags the code is worse than no document, because
+it is trusted.
 
 ## Where things live
 
