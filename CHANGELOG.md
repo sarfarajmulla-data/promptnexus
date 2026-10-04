@@ -6,6 +6,26 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **The CLI could not start at all.** `src/cli/promptnexus.mjs` imported `start`
+  from the server module, which exported nothing, so every invocation — including
+  the published `bin` entry — died with a module error. The server now exports
+  `createApp()` and `start()`, binds a port only when run directly, and the CLI
+  has a test suite. Empty-input commands also exited `0` on misuse; they now
+  report the problem and exit `1`.
+- **Two quadratic regular expressions** in the pipeline (blank-line prompt
+  splitting and the robustness scorer). A pasted document with thousands of blank
+  lines hung the process indefinitely; the same input is now linear — 200 000
+  newlines process in ~1.5 ms.
+- **A translate-mode warning was silently discarded.** The object literal that
+  built the response contained two `warnings` keys, and the second overwrote the
+  first — so the "this prompt still lacks…" gap list never reached the user.
+- **A quoted title broke XML output.** `xmlEscape` escaped `<`, `>` and `&` but
+  not quotes, so a prompt title containing `"` produced malformed XML.
+- **The secret scanner judged its allowlist against the whole line**, which meant
+  a genuine key sharing a line with the word `placeholder` or `example.com` was
+  silently allowed through. The allowlist now tests only the matched value.
+
 ### Added
 - Provider routing contract (design): a server-side router that selects a model
   based on task type, quality requirement, cost and capability, with graceful

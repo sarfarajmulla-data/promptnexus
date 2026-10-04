@@ -9,7 +9,7 @@
 
 import { TAXONOMY, CATEGORY_INDEX } from '../knowledge/taxonomy.mjs';
 import { TARGETS, TARGET_INDEX } from '../knowledge/targets.mjs';
-import { rankSignals, matchSignals, bestMatch } from '../util/match.mjs';
+import { rankSignals, matchSignals } from '../util/match.mjs';
 import { normalizeInput, fold, countWords, sentences, clamp, stripMetaFrame, firstMeaningfulSentence, looksLikeTask } from '../util/text.mjs';
 
 /* ───────────────────────── intent ───────────────────────── */
@@ -77,9 +77,6 @@ export function goalSentence(intent, primary, spec) {
   const verb = ACTION_BY_CATEGORY[primary.id] || 'complete the task of';
   if (!topic) return `Produce the best possible ${primary.label.split(/[/—]/)[0].trim().toLowerCase()} deliverable.`;
   const trimmedTopic = topic.length > 220 ? topic.slice(0, 217).trimEnd() + '…' : topic;
-  // If the user's own sentence already opens with a verb, it *is* the goal —
-  // stacking our own action verb on top would just restate it.
-  const startsWithVerb = /^(write|create|build|make|design|analyse|analyze|explain|compare|plan|fix|debug|translate|summarise|summarize|generate|draft|review|improve|teach|find|calculate|solve|convert|refactor|optimi[sz]e|learn|decide|choose|prepare|develop|implement|revis\w+|help)\b/i.test(trimmedTopic);
   // "i keep failing physics quizzes, teach me kinematics" → the second clause is the real goal.
   let body = trimmedTopic;
   const commaParts = body.split(/,\s+/);
@@ -88,6 +85,9 @@ export function goalSentence(intent, primary, spec) {
   }
   body = body.replace(/^(?:please\s+|can you\s+|could you\s+)/i, '');
   const capitalised = body.charAt(0).toUpperCase() + body.slice(1);
+  // If the sentence already opens with a verb, it *is* the goal — stacking our
+  // own action verb on top would just restate it. Tested on the processed body,
+  // not on the raw topic, so a stripped lead-in clause cannot hide the verb.
   const bodyStartsWithVerb = /^(write|create|build|make|design|analyse|analyze|explain|compare|plan|fix|debug|translate|summari[sz]e|generate|draft|review|improve|teach|find|calculate|solve|convert|refactor|optimi[sz]e|learn|decide|choose|prepare|develop|implement|revis\w+|help|show|suggest|give)\b/i.test(body);
   if (bodyStartsWithVerb || /^i\s+\w+\b/i.test(body)) return capitalised;
   return `${verb.charAt(0).toUpperCase() + verb.slice(1)}: ${body}`;

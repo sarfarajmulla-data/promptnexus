@@ -80,10 +80,6 @@ test('technique library is valid and self-consistent', () => {
   assert.equal(TECHNIQUE_INDEX.role.family, 'structure');
 });
 
-function safeRender(t, ctxRef) {
-  try { return t.render(ctxRef) || []; } catch { return []; }
-}
-
 test('every technique renders without throwing against a realistic context', () => {
   const ctx = {
     raw: 'write a research summary about renewable energy policy for my masters dissertation',

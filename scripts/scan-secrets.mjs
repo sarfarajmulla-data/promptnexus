@@ -43,21 +43,24 @@ const PATTERNS = [
   [/\b(?:https?:\/\/)?[a-z0-9-]+\.supabase\.co\b[^\n]*\b(?:service_role|anon)\b[^\n]*\beyJ/, 'Supabase service key'],
 ];
 
-/** Values that look like secrets but are obviously placeholders or documentation. */
-const ALLOWLIST = [
-  /your[-_]?(?:api[-_])?key/i,
-  /sk-\.\.\./,
-  /sk-xxx+/i,
-  /xxxxx+/i,
+/**
+ * Strings that look like a credential but are plainly a placeholder.
+ *
+ * These are tested against the **matched value**, not the whole line. Testing
+ * the line was a real false negative: a genuine key sharing a line with the
+ * word "placeholder" or the string "example.com" was silently skipped, which
+ * would also let a careless `sk-...` paste slip through.
+ */
+const PLACEHOLDER = [
+  /^sk-\.\.\.$/,              // sk-... — documented shorthand
+  /^sk-x{3,}$/i,                 // sk-xxx
+  /x{5,}/i,                      // xxxxx masking
+  /your[-_]?(?:api[-_])?key/i,   // your-api-key
   /placeholder/i,
-  /example\.com/i,
-  /<[A-Z_]+>/,                    // <YOUR_KEY>
-  /\$\{[A-Z_]+\}/,                // ${PROVIDER_API_KEY}
-  /process\.env\./,
-  /sk-\[A-Za-z0-9/,             // the regex literal in THIS file
-  /sk-xxx/i,
-  /OPENAI_API_KEY=/,
-  /AIza\[0-9A-Za-z/,
+  /example\.com/i,               // documentation hostnames
+  /^<[A-Z_]+>$/,                 // <YOUR_KEY>
+  /^\$\{[A-Z_]+\}$/,            // ${PROVIDER_API_KEY}
+  /^process\.env\./              // process.env.OPENAI_API_KEY
 ];
 
 /** Binary and generated files are not worth scanning. */
@@ -75,8 +78,10 @@ function scanText(text, label) {
   for (const [re, reason] of PATTERNS) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (!re.test(line)) continue;
-      if (ALLOWLIST.some((a) => a.test(line))) continue;
+      const match = re.exec(line);
+      if (!match) continue;
+      // Judge only the credential-shaped substring, never the whole line.
+      if (PLACEHOLDER.some((a) => a.test(match[0]))) continue;
       findings.push({ label, line: i + 1, reason, excerpt: line.trim().slice(0, 100) });
     }
   }
@@ -121,7 +126,7 @@ if (findings.length) {
     console.error(`    ${f.excerpt}\n`);
   }
   console.error('Remove the value, rotate the credential, and commit the removal.');
-  console.error('If this is a false positive, widen ALLOWLIST in scripts/scan-secrets.mjs.\n');
+  console.error('If this is a false positive, widen PLACEHOLDER in scripts/scan-secrets.mjs.\n');
   process.exit(1);
 }
 

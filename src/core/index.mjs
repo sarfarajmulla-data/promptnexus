@@ -37,7 +37,7 @@ export function architect(input, options = {}) {
 /** Compact text rendering — the shape the CLI prints by default. */
 export function toText(result, { minimal = false } = {}) {
   if (result.error) return result.error;
-  if (minimal || result.mode === 'compress' && false) return result.prompt || '';
+  if (minimal) return result.prompt || '';
 
   const out = [];
   out.push(`🎯 UNDERSTOOD GOAL\n${result.goal}`);

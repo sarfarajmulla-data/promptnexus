@@ -10,15 +10,15 @@
  * user can audit it.
  */
 
-import { normalizeInput, estimateTokens, countWords, listOut, unique, clamp, titleCase } from '../util/text.mjs';
+import { normalizeInput, estimateTokens, listOut, unique, titleCase } from '../util/text.mjs';
 import { createTrace } from '../util/trace.mjs';
-import { resolveTarget, can, TARGET_INDEX } from '../knowledge/targets.mjs';
+import { resolveTarget } from '../knowledge/targets.mjs';
 import { detectIntent, goalSentence, classifyCategories, detectTarget, assessComplexity } from './classify.mjs';
 import { extractSpec } from './extract.mjs';
 import { detectModes } from './modes.mjs';
 import { assessMissingInformation } from './clarify.mjs';
 import { deriveFlags, deriveStrategyPayload, selectTechniques, COST_BUDGET } from './strategy.mjs';
-import { buildPrompt, buildMediaPrompt, buildHandoff } from './build.mjs';
+import { buildPrompt, buildHandoff } from './build.mjs';
 import { renderPrompt } from './render.mjs';
 import { adversarialReview, quarantined } from './redteam.mjs';
 import { qualityControl, scorePrompt } from './score.mjs';
@@ -201,7 +201,6 @@ function buildProvenance(ctx) {
  */
 function buildMediaProvenance(ctx) {
   const m = ctx.media;
-  const raw = (ctx.spec?.media?.raw || '').toLowerCase();
   const assumed = new Set((m.assumed || []).map((a) => a.split('→')[0].trim().toLowerCase()));
   const cue = (label, key, value) => {
     const defaulted = assumed.has(key) || !value;
@@ -581,9 +580,18 @@ function improveExistingPrompt(ctx, options) {
       },
       customization: [],
       qualityChecks: [],
-      warnings: translated.missing.length ? [`This prompt still lacks: ${translated.missing.slice(0, 4).join(', ').replace(/_/g, ' ')}. Run Improve mode to close those gaps.`] : [],
       strategy: { summary: tr.note },
-      warnings: ctx.target.verified ? [] : [`Formatting follows ${ctx.target.label}'s documented conventions; capability levels may change between model versions.`],
+      // Both warnings matter: the translate gap used to be silently dropped
+      // because two `warnings` keys in one object literal is legal and the
+      // second one wins.
+      warnings: [
+        ...(translated.missing.length
+          ? [`This prompt still lacks: ${translated.missing.slice(0, 4).join(', ').replace(/_/g, ' ')}. Run Improve mode to close those gaps.`]
+          : []),
+        ...(ctx.target.verified
+          ? []
+          : [`Formatting follows ${ctx.target.label}'s documented conventions; capability levels may change between model versions.`]),
+      ],
       limitations: ['Intent is preserved; wording may be reordered to suit the target’s parsing conventions.'],
     };
   }

@@ -34,7 +34,6 @@ const CHECKS = [
 ];
 
 const VAGUE_RE = /\b(?:good|nice|great|appropriate|suitable|interesting|engaging|proper|reasonable|etc\.?|and so on|whatever|some|various|a few)\b/gi;
-const ABSOLUTE_RE = /\b(?:always|never|every|all|must)\b/gi;
 
 /**
  * Structural diagnosis of an existing prompt.
@@ -500,7 +499,11 @@ export function splitPromptPair(raw) {
   if (fences.length >= 2) return [fences[0], fences[1]];
   const parts = raw.split(/\n(?=(?:prompt\s*(?:[ab12]|one|two)|option\s*[ab12]|[AB]\s*[):])\s*)/i).map((p) => p.trim()).filter((p) => countWords(p) > 15);
   if (parts.length >= 2) return [parts[0], parts[1]];
-  const halves = raw.split(/\n\s*\n\s*(?:vs\.?|versus|and)\s*\n\s*\n/i);
+  // Horizontal whitespace only ([^\S\n], not \s): `\s` matches `\n`, which made
+  // the blank-line pattern ambiguous and let a long run of newlines backtrack
+  // catastrophically. Same semantics for real input, linear time for hostile input.
+  const halves = raw.split(/\n[^\S\n]*\n[^\S\n]*(?:vs\.?|versus|and)[^\S\n]*\n[^\S\n]*\n/i);
+
   if (halves.length >= 2) return [halves[0], halves[1]];
   const mid = Math.floor(raw.length / 2);
   return [raw.slice(0, mid), raw.slice(mid)];

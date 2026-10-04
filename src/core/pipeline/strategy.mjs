@@ -13,7 +13,7 @@
 import { TECHNIQUES } from '../knowledge/techniques.mjs';
 import { CATEGORY_INDEX } from '../knowledge/taxonomy.mjs';
 import { can } from '../knowledge/targets.mjs';
-import { clamp, fold, unique, listOut } from '../util/text.mjs';
+import { fold, unique } from '../util/text.mjs';
 
 /* ── evidence: user-text signals that make a technique specifically relevant ── */
 const EVIDENCE = {
@@ -79,7 +79,7 @@ export function selectTechniques(ctx) {
     if (t.ownership === 'architecture') continue;
     if (t.requires && !t.requires.every((r) => can(target, r))) continue;
     if (t.applies && !t.applies(ctx)) continue;
-    let ok = true;
+    let ok;
     try { ok = t.when ? t.when(ctx) : true; } catch { ok = false; }
     if (!ok) continue;
     if (t.levels && (complexity.level < t.levels[0] || complexity.level > t.levels[1])) {

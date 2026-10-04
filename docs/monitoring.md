@@ -11,7 +11,7 @@ set up.
 | Signal | How | Where to look |
 |---|---|---|
 | **Liveness + pipeline health** | `GET /api/health` runs the engine on a fixed input and asserts four properties | `curl https://<deployment>/api/health` |
-| Build success | CI gates: 56 tests, zero-dependency assertion, engine purity, determinism, API smoke test | GitHub → Actions |
+| Build success | CI gates: 71 tests, zero-dependency assertion, engine purity, determinism, API smoke test | GitHub → Actions |
 | Deploy status | Vercel deployment list | Vercel dashboard |
 | Runtime errors | Vercel function logs (shaped errors, never stack traces) | Vercel → Deployments → Functions |
 | Dependency risk | Dependabot watches the npm ecosystem and the workflow actions | GitHub → Security |

@@ -10,7 +10,6 @@
  * the user can correct — never silently fabricated.
  */
 
-import { CATEGORY_INDEX } from '../knowledge/taxonomy.mjs';
 import { normalizeInput, sentences, lines, countWords, fold, unique, titleCase, truncateWords, extractCodeBlocks, similarity, stripMetaFrame, firstMeaningfulSentence, looksLikeTask } from '../util/text.mjs';
 
 /* ───────────────────── pattern banks ───────────────────── */
@@ -99,9 +98,6 @@ const PREMIUM_RE = /\b(premium|paid|enterprise|best (?:quality|money can buy)|bu
 const URGENT_RE = /\b(urgent|asap|tonight|tomorrow|deadline|due (?:on|by|in)|this (?:week|weekend)|in \d+ (?:hours|days)|running out of time|no time)\b/i;
 const DATE_RE = /\b(by|before|on|due)\s+(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*|\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?|next (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|week|month)|the \d{1,2}(?:st|nd|rd|th))\b/i;
 
-const EXISTING_PROMPT_RE = /\b(improve|rewrite|fix|optimis|optimiz|refine|upgrade|rate|review|critique|compare|shorten|compress|expand|translate|test|break)\b[^.\n]{0,40}\b(prompt|instruction|system message)\b/i;
-const PASTED_PROMPT_RE = /(^|\n)\s*(you are (a|an|the)\b|as an? (ai|assistant|expert)\b|your (task|role|job) is\b|act as\b|i want you to\b)/i;
-const CODE_PASTE_RE = /(^|\n)\s*(def |function |class |import |const |let |var |#include|public |private |<\?php|SELECT |async def )/m;
 
 const USER_SELF_RE = /\b(i'?m a|i am a|i'?m an|as a|studying|i study|my (?:course|degree|major|background|experience)|i work (?:as|in|at)|i know|i'?m learning|i'?m new to|i have experience)\b/i;
 

@@ -12,15 +12,31 @@ tests/
   knowledge.test.mjs     7 tests | data-table integrity, capability claims
   tools.test.mjs        16 tests | improve, compress, expand, test, compare, provenance
   api.test.mjs          19 tests | HTTP contract, error shaping, injection containment
+  cli.test.mjs           9 tests | every command, exit codes, serve lifecycle
+  robustness.test.mjs    6 tests | hostile input, ReDoS, empty input
                        ──────────
-                        56 tests
+                        71 tests
 ```
 
 Run everything with:
 
 ```bash
-npm test        # node --test tests/*.test.mjs  → 56 tests
+npm test        # node --test tests/*.test.mjs  → 71 tests
 ```
+
+## Two suites that exist because of a real escape
+
+`cli.test.mjs` and `robustness.test.mjs` are not speculative coverage. Each one
+was written in response to a defect that shipped past the other four suites:
+
+- **`cli.test.mjs`** — the CLI imported `start` from the server module, which
+  exported nothing. Every invocation, including the published `bin` entry,
+  failed to load at all. Nothing imported the CLI, so nothing noticed. The rule
+  that came out of it: *anything referenced from `package.json` gets a test.*
+- **`robustness.test.mjs`** — two pipeline regexes were quadratic, and one was
+  catastrophic. A pasted document with thousands of blank lines never finished.
+  The rule: *the input surface is arbitrary text, so the cheapest possible test
+  is a hostile string with a generous time budget.*
 
 ## The four suites
 
@@ -85,7 +101,7 @@ Spawns the real server on port 4399 and drives it like a client:
 Every pull request must pass five gates:
 
 1. **Zero dependencies** — fails if any `dependencies` or `devDependencies` appear.
-2. **Tests** — 56 tests.
+2. **Tests** — 71 tests.
 3. **Build** — copies the engine to `public/engine/` and fails if any `node:` import has entered `src/core/`.
 4. **Engine purity** — a grep guard for Node built-ins in the engine.
 5. **Smoke test** — starts the server, checks `/api/health`, generates a prompt, and asserts no injection payload appears in the output.

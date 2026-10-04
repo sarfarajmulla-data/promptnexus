@@ -99,29 +99,79 @@ async function serveStatic(pathname, req, res) {
   }
 }
 
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+/**
+ * Build the HTTP server without binding a port.
+ *
+ * Exported so callers (the CLI's `serve` command, tests) can own the listen
+ * step, and so importing this module never has the side effect of claiming a
+ * port.
+ */
+export function createApp() {
+  return http.createServer(async (req, res) => {
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'access-control-allow-origin': '*',
-      'access-control-allow-headers': 'content-type',
-      'access-control-allow-methods': 'GET, POST, OPTIONS',
-    }).end();
-    return;
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'access-control-allow-origin': '*',
+        'access-control-allow-headers': 'content-type',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
+      }).end();
+      return;
+    }
+
+    if (url.pathname.startsWith('/api/')) {
+      await invokeApi(url.pathname.replace(/^\/api\//, '').replace(/\/$/, ''), req, res);
+      return;
+    }
+
+    await serveStatic(url.pathname, req, res);
+  });
+}
+
+/**
+ * Start listening.
+ *
+ * @param {number|string} port
+ * @param {string} host
+ * @returns {Promise<import('node:http').Server>} resolves once the port is bound
+ */
+export function start(port = PORT, host = HOST) {
+  const parsed = Number(port);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65535) {
+    return Promise.reject(new RangeError(`Port must be an integer between 0 and 65535 — received ${JSON.stringify(port)}.`));
   }
 
-  if (url.pathname.startsWith('/api/')) {
-    await invokeApi(url.pathname.replace(/^\/api\//, '').replace(/\/$/, ''), req, res);
-    return;
-  }
+  const server = createApp();
+  return new Promise((resolve, reject) => {
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        reject(new Error(`Port ${parsed} is already in use. Stop the process using it, or pass a different --port.`));
+        return;
+      }
+      if (err.code === 'EACCES') {
+        reject(new Error(`Not allowed to bind port ${parsed}. Ports below 1024 usually need elevated privileges — try --port 4317.`));
+        return;
+      }
+      reject(err);
+    });
+    server.listen(parsed, host, () => {
+      const actual = server.address().port;
+      console.log(`PromptNexus running on http://${host}:${actual}`);
+      console.log(`  app      → http://localhost:${actual}/`);
+      console.log(`  api      → http://localhost:${actual}/api/health`);
+      console.log(`  engine   → http://localhost:${actual}/engine/index.mjs`);
+      resolve(server);
+    });
+  });
+}
 
-  await serveStatic(url.pathname, req, res);
-});
+// Auto-start only when run directly (`node src/server/server.mjs`), never on import.
+const invokedDirectly = process.argv[1]
+  && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
-server.listen(PORT, HOST, () => {
-  console.log(`PromptNexus running on http://${HOST}:${PORT}`);
-  console.log(`  app      → http://localhost:${PORT}/`);
-  console.log(`  api      → http://localhost:${PORT}/api/health`);
-  console.log(`  engine   → http://localhost:${PORT}/engine/index.mjs`);
-});
+if (invokedDirectly) {
+  start().catch((err) => {
+    console.error(`Could not start the server: ${err.message}`);
+    process.exitCode = 1;
+  });
+}

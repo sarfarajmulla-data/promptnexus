@@ -7,7 +7,7 @@
  * model output, and the report says so. Inflated scores are worse than useless.
  */
 
-import { estimateTokens, countWords, listOut, clamp, unique } from '../util/text.mjs';
+import { estimateTokens, clamp, unique } from '../util/text.mjs';
 
 const IDEAL_TOKENS = { 1: [120, 480], 2: [280, 760], 3: [500, 1150], 4: [750, 1650], 5: [900, 2200] };
 
@@ -74,7 +74,7 @@ function robustSignals(ctx) {
   if (/delimiter|```|<\w+>|BEGIN|```/i.test(body)) n++;
   if (/instructions embedded|never as instructions|outrank/i.test(body)) n++;
   if (/edge case|empty|missing input|not provided/i.test(body)) n++;
-  if (/missing detail|assumption|if .* is not (?:known|provided)/i.test(body)) n++;
+  if (/missing detail|assumption|if [^\n]{0,160}? is not (?:known|provided)/i.test(body)) n++;
   if (/\[Verified\]|\[Assumption\]|uncertain|confidence/i.test(body)) n++;
   return n;
 }
@@ -127,7 +127,6 @@ export function scorePrompt(ctx) {
   const mustCount = ctx.spec.requirements.must.length;
   const negCount = (body.match(/\b(?:never|do not|don’t|don'?t|avoid|must not|without)\b/gi) || []).length;
   const checks = qualityControl(ctx);
-  const passed = checks.filter((c) => c.pass).length / checks.length;
 
   const [lo, hi] = IDEAL_TOKENS[ctx.complexity.level] || IDEAL_TOKENS[2];
   const complexityFit = tokens < lo ? clamp(60 + (tokens / lo) * 40, 20, 100)

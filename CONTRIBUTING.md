@@ -37,7 +37,7 @@ not a trade-off:
 git clone https://github.com/sarfarajmulla-data/promptnexus.git
 cd promptnexus
 npm run hooks   # install git hooks (also runs automatically on npm install)
-npm test        # 56 tests, no install step required
+npm test        # 71 tests, no install step required
 npm start       # http://localhost:4317
 ```
 

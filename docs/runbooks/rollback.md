@@ -66,7 +66,7 @@ A rollback you have never performed is a plan, not a capability.
 
 ## Prevention
 
-A rollback should be rare because CI blocks the obvious failures: 56 tests, the
+A rollback should be rare because CI blocks the obvious failures: 71 tests, the
 zero-dependency assertion, the browser-safety guard, determinism, and an API smoke
 test on every pull request. If a broken deploy reaches production, the more useful
 question is which gate should have caught it — and then to add that gate.

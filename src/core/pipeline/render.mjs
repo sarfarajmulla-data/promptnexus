@@ -9,7 +9,12 @@
 
 import { MEDIA_KINDS } from '../knowledge/targets.mjs';
 
-const xmlEscape = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const xmlEscape = (s) => String(s)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&apos;');
 
 /**
  * @param {Array<{title:string,lines:string[]}>} sections

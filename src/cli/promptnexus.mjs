@@ -44,6 +44,14 @@ function readStdinIfPiped() {
   try { return readFileSync(0, 'utf8'); } catch { return ''; }
 }
 
+/** Misuse: the command was named but its required input is missing. */
+function misuse(command) {
+  console.error(c(C.red, `error: "${command}" needs some text to work on.`));
+  console.error(c(C.grey, `  try: promptnexus ${command} "<paste your text here>"`));
+  console.error(c(C.dim, '  run `promptnexus --help` for every option'));
+  process.exitCode = 1;
+}
+
 function usage() {
   console.log(`${c(C.bold, 'PromptNexus')} ${c(C.grey, '— Universal AI Prompt Architect')}
 
@@ -199,10 +207,14 @@ function buildOptions(flags) {
 async function main() {
   const argv = process.argv.slice(2);
   const { flags, positional } = parseArgs(argv);
+
+  // `--help`/`-h` and a bare invocation are help requests, not misuse: they exit 0.
+  const askedForHelp = flags.help || flags.h || argv.length === 0;
+
+  const isCommand = positional[0] && ['improve', 'expand', 'compress', 'test', 'compare', 'explain', 'targets', 'modes', 'serve', 'demo', 'help'].includes(positional[0]);
+  if (askedForHelp && !isCommand) return usage();
   let command = 'generate';
-  if (positional[0] && ['improve', 'expand', 'compress', 'test', 'compare', 'explain', 'targets', 'modes', 'serve', 'demo', 'help'].includes(positional[0])) {
-    command = positional.shift();
-  }
+  if (isCommand) command = positional.shift();
 
   const piped = readStdinIfPiped();
   const argText = positional.join(' ').trim();
@@ -251,7 +263,7 @@ async function main() {
     }
 
     case 'compress': {
-      if (!input) return usage();
+      if (!input) return misuse(command);
       const r = compressPrompt(input);
       if (flags.json) return console.log(JSON.stringify(r, null, 2));
       console.log(c(C.bold, `${r.saved}% smaller`) + c(C.grey, `  ${r.before.words} → ${r.after.words} words · ${r.after.tokens} tokens`));
@@ -264,7 +276,7 @@ async function main() {
     }
 
     case 'test': {
-      if (!input) return usage();
+      if (!input) return misuse(command);
       const r = testPrompt(input);
       if (flags.json) return console.log(JSON.stringify(r, null, 2));
       console.log(c(C.bold, `Resiliency ${r.resiliency}/100\n`));
@@ -279,7 +291,7 @@ async function main() {
     }
 
     case 'compare': {
-      if (!input) return usage();
+      if (!input) return misuse(command);
       const [a, b] = input.split(/\n\s*\n\s*(?:vs\.?|versus|and|—)\s*\n\s*\n/i);
       if (!a || !b) {
         const halves = input.split(/\n(?=prompt\s*[b2])/i);
@@ -292,7 +304,7 @@ async function main() {
     }
 
     case 'explain': {
-      if (!input) return usage();
+      if (!input) return misuse(command);
       const r = architect(input, buildOptions(flags));
       if (flags.json) return console.log(JSON.stringify({ ...r, explanation: explain(r) }, null, 2));
       console.log(toText(r));
@@ -307,7 +319,7 @@ async function main() {
     case 'improve':
     case 'expand':
     case 'translate': {
-      if (!input) return usage();
+      if (!input) return misuse(command);
       const r = architect(`${command} this prompt:\n\n${input}`, buildOptions(flags));
       if (!flags.json && r.improvements?.length) {
         console.log(c(C.bold, 'DIAGNOSIS'));
@@ -323,7 +335,7 @@ async function main() {
     }
 
     default: {
-      if (!input) return usage();
+      if (!input) return misuse(command);
       const r = architect(input, buildOptions(flags));
       printResult(r, flags);
     }
@@ -334,7 +346,6 @@ function printCompare(a, b, flags) {
   const cmp = comparePrompts(a, b, { labelA: 'Prompt A', labelB: 'Prompt B' });
   if (flags.json) return console.log(JSON.stringify(cmp, null, 2));
   console.log(c(C.bold, cmp.verdict) + '\n');
-  const rows = ['dimension', ...Object.keys(cmp.breakdown['Prompt A']).filter((k) => k !== 'overall')];
   console.log(c(C.grey, 'dimension'.padEnd(22) + 'A'.padStart(5) + 'B'.padStart(7) + '   better'));
   for (const d of Object.keys(cmp.breakdown['Prompt A']).filter((k) => k !== 'overall')) {
     const av = cmp.breakdown['Prompt A'][d];
