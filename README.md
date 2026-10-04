@@ -267,7 +267,8 @@ docs/                design, engineering and operations documentation
 
 ## Contributing
 
-Read [`CONTRIBUTING.md`](./CONTRIBUTING.md). The short version: zero dependencies,
+Read [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) and
+[`CONTRIBUTING.md`](./CONTRIBUTING.md). The short version: zero dependencies,
 `src/core` stays pure, one implementation per behaviour, and the honesty rules are
 not negotiable.
 

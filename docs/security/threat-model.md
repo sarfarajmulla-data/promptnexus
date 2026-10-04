@@ -132,6 +132,6 @@ Recorded rather than left implied:
 ## Review cadence
 
 Re-run the security review before any release tagged `minor` or higher, using
-[`.claude/commands/security-review.md`](../.claude/commands/security-review.md).
+[`.claude/commands/security-review.md`](../../.claude/commands/security-review.md).
 A change that weakens prompt-injection defence, secret handling, or the browser
 engine's purity is a **security regression**, not a trade-off.
